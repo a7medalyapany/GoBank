@@ -17,7 +17,12 @@ func TestTransferTx(t *testing.T) {
 	account2 := createRandomAccount(t)
 
 	// Print balances before transfer
-	t.Logf("Before transfer: Account1 = %v, Account2 = %v", account1.Balance, account2.Balance)
+	t.Logf(
+	">> Before transfer: Account1 = %s, Account2 = %s",
+	FormatMoney(account1.Balance),
+	FormatMoney(account2.Balance),
+)
+
 
 	// Create transfer amount (e.g., 10.00)
 	amount := pgtype.Numeric{
@@ -111,6 +116,8 @@ func TestTransferTx(t *testing.T) {
 
 	// Collect results
 
+	existed := make(map[int64]bool)
+
 	for i := 0; i < n; i++ {
 		err := <- errs       // Wait for error from channel
 		require.NoError(t, err)
@@ -162,8 +169,63 @@ func TestTransferTx(t *testing.T) {
 		_, err = store.queries.GetEntry(context.Background(), toEntry.ID)
 		require.NoError(t, err)
 
+
+		// Check accounts
+
+		fromAccount := result.FromAccount
+		require.NotEmpty(t, fromAccount)
+		require.Equal(t, fromAccount.ID, account1.ID)
+
+		toAccount := result.ToAccount
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, toAccount.ID, account2.ID)
+
+
 		//TODO: Check accounts' balances
 
+		t.Logf(
+			">> tx %v: from = %s, to = %s",
+			i+1,
+			FormatMoney(fromAccount.Balance),
+			FormatMoney(toAccount.Balance),
+		)
+
+		transferred := account1.Balance.Int.Int64() - fromAccount.Balance.Int.Int64()
+		require.Equal(t, transferred,
+			toAccount.Balance.Int.Int64() - account2.Balance.Int.Int64(),
+		)
+
+		require.True(t, transferred > 0)
+		require.True(t, transferred%amount.Int.Int64() == 0) // transferred is multiple of amount
+		// 1 * amount, 2 * amount, 3 * amount, ..., n * amount
+
+		k := transferred / amount.Int.Int64()
+		require.True(t, k >= 1 && k <= int64(n))
+		require.NotContains(t, existed, k)
+		existed[k] = true
 	}
 
+	// Check final updated balances
+	updatedAccount1, err := store.queries.GetAccount(context.Background(), account1.ID)
+	require.NoError(t, err)
+
+	updatedAccount2, err := store.queries.GetAccount(context.Background(), account2.ID)
+	require.NoError(t, err)
+
+	require.Equal(t,
+		account1.Balance.Int.Int64() - int64(n)*amount.Int.Int64(),
+		updatedAccount1.Balance.Int.Int64(),
+	)
+
+	require.Equal(t,
+		account2.Balance.Int.Int64() + int64(n)*amount.Int.Int64(),
+		updatedAccount2.Balance.Int.Int64(),
+	)
+	
+	// Print balances after transfer
+	t.Logf(
+		">> After transfer: Account1 = %s, Account2 = %s",
+		FormatMoney(updatedAccount1.Balance),
+		FormatMoney(updatedAccount2.Balance),
+	)
 }
