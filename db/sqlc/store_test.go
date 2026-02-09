@@ -229,3 +229,83 @@ func TestTransferTx(t *testing.T) {
 		FormatMoney(updatedAccount2.Balance),
 	)
 }
+
+func TestTransferTxDeadlock(t *testing.T) {
+	store := NewStore(testDB)
+
+	account1 := createRandomAccount(t)
+	account2 := createRandomAccount(t)
+
+	// Print balances before transfer
+	t.Logf(
+	">> Before transfer: Account1 = %s, Account2 = %s",
+	FormatMoney(account1.Balance),
+	FormatMoney(account2.Balance),
+)
+
+
+	// Create transfer amount (e.g., 10.00)
+	amount := pgtype.Numeric{
+		Int:   big.NewInt(1000), // 10.00 with 2 decimal places
+		Exp:   -2,
+		Valid: true,
+	}
+
+	// Run n concurrent transfer transactions
+	n := 10
+	errs := make(chan error)
+
+
+	for i := 0; i < n; i++ {
+		fromAccountID := account1.ID
+		toAccountID := account2.ID
+
+		if i%2 == 1 {
+			// For odd iterations, transfer in the opposite direction to test deadlocks
+			fromAccountID = account2.ID
+			toAccountID = account1.ID
+		}
+
+		go func() {
+			ctx := context.Background()
+			_, err := store.TransferTx(ctx, TransferTxParams{
+				FromAccountID: fromAccountID,
+				ToAccountID: toAccountID,
+				Amount: amount,
+			})
+
+			errs <- err
+		}()
+	}
+
+	// Collect results
+
+	for i := 0; i < n; i++ {
+		err := <- errs       // Wait for error from channel
+		require.NoError(t, err)	
+	}
+
+	// Check final updated balances
+	updatedAccount1, err := store.queries.GetAccount(context.Background(), account1.ID)
+	require.NoError(t, err)
+
+	updatedAccount2, err := store.queries.GetAccount(context.Background(), account2.ID)
+	require.NoError(t, err)
+
+	require.Equal(t,
+		account1.Balance.Int.Int64(),
+		updatedAccount1.Balance.Int.Int64(),
+	)
+
+	require.Equal(t,
+		account2.Balance.Int.Int64(),
+		updatedAccount2.Balance.Int.Int64(),
+	)
+	
+	// Print balances after transfer
+	t.Logf(
+		">> After transfer: Account1 = %s, Account2 = %s",
+		FormatMoney(updatedAccount1.Balance),
+		FormatMoney(updatedAccount2.Balance),
+	)
+}
