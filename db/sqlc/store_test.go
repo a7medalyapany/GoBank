@@ -181,7 +181,7 @@ func TestTransferTx(t *testing.T) {
 		require.Equal(t, toAccount.ID, account2.ID)
 
 
-		//TODO: Check accounts' balances
+		// Check accounts' balances
 
 		t.Logf(
 			">> tx %v: from = %s, to = %s",
