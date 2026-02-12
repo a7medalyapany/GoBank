@@ -10,15 +10,15 @@ import (
 
 // Store provides all functions to execute db queries and transactions
 type Store struct {
-	db      *pgxpool.Pool
-	queries *Queries
+	*Queries
+	db *pgxpool.Pool
 }
 
 // NewStore creates a new Store
 func NewStore(db *pgxpool.Pool) *Store {
 	return &Store{
+		Queries: New(db),
 		db:      db,
-		queries: New(db),
 	}
 }
 
@@ -33,7 +33,7 @@ func (store *Store) execTx(
 		return err
 	}
 
-	q := store.queries.WithTx(tx)
+	q := store.Queries.WithTx(tx)
 
 	err = fn(q)
 	if err != nil {
