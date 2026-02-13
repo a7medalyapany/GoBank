@@ -25,6 +25,9 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    env:
+      TESTING_DB_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/bank?sslmode=disable
+
     steps:
       - uses: actions/checkout@v4
 
