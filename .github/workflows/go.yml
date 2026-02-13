@@ -34,6 +34,12 @@ jobs:
           sudo mv migrate /usr/bin/
           which migrate
 
+      - name: Create test config
+        run: |
+          cat > app.env << EOF
+          TESTING_DB_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/bank?sslmode=disable
+          EOF
+
       - name: Run database migrations
         run: make migrateup
 

@@ -3,29 +3,28 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/a7medalyapany/GoBank.git/api"
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
+	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	_ = godotenv.Load()
-	dbURL := os.Getenv("DB_URL")
-	port := os.Getenv("PORT")
-	serverAddress := os.Getenv("SERVER_ADDRESS")
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		panic(fmt.Sprintf("cannot load config: %v", err))
+	}
 
-	if dbURL == "" || port == "" || serverAddress == "" {
+	if config.DB_URL == "" || config.PORT == "" || config.SERVER_ADDRESS == "" {
 		panic("DB_URL, PORT, and SERVER_ADDRESS must be set in environment variables")
 	}
 
-	serverAddress = strings.TrimPrefix(serverAddress, "http://")
+	serverAddress := strings.TrimPrefix(config.SERVER_ADDRESS, "http://")
 	serverAddress = strings.TrimPrefix(serverAddress, "https://")
 
-	conn, err := pgxpool.New(context.Background(), dbURL)
+	conn, err := pgxpool.New(context.Background(), config.DB_URL)
 	if err != nil {
 		panic(fmt.Sprintf("cannot connect to the database; verify DB_URL credentials and host: %v", err))
 	}
@@ -34,7 +33,7 @@ func main() {
 	store := db.NewStore(conn)
 	server := api.NewServer(store)
 
-	err = server.Start(serverAddress + ":" + port)
+	err = server.Start(serverAddress + ":" + config.PORT)
 	if err != nil {
 		panic("cannot start the server: " + err.Error())
 	}
