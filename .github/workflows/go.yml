@@ -25,9 +25,6 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-    env:
-      TESTING_DB_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/bank?sslmode=disable
-
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +33,12 @@ jobs:
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.1/migrate.linux-amd64.tar.gz | tar xvz
           sudo mv migrate /usr/bin/
           which migrate
+
+      - name: Create test config
+        run: |
+          cat > app.env << EOF
+          TESTING_DB_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/bank?sslmode=disable
+          EOF
 
       - name: Run database migrations
         run: make migrateup
