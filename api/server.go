@@ -3,6 +3,8 @@ package api
 import (
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
 // Server represents the API server, it serves HTTP requests.
@@ -16,6 +18,14 @@ type Server struct {
 func NewServer(store *db.Store) *Server {
 	server := &Server{store: store}
 	router := gin.Default()
+
+
+	v, ok := binding.Validator.Engine().(*validator.Validate)
+	if !ok {
+		panic("failed to initialize validator")
+	}
+	v.RegisterValidation("currency", validCurrency)
+
 
 	// accounts' APIs
 	router.POST("/accounts", server.createAccount)
