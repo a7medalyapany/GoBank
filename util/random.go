@@ -38,9 +38,9 @@ func RandomOwner() string {
 
 func RandomCurrency() string {
 	currencies := []string{
-		"USD", "USD", "USD",
-		"EUR", "EUR",
-		"EGP",
+		USD, USD, USD,
+		EUR, EUR,
+		EGP,
 	}
 
 	return currencies[rand.Intn(len(currencies))]
