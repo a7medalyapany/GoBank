@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -48,9 +47,9 @@ func (store *Store) execTx(
 
 // TransferTxParams is input for transfer
 type TransferTxParams struct {
-	FromAccountID int64          `json:"from_account_id"`
-	ToAccountID   int64          `json:"to_account_id"`
-	Amount        pgtype.Numeric `json:"amount"`
+    FromAccountID int64 `json:"from_account_id"`
+    ToAccountID   int64 `json:"to_account_id"`
+    Amount        int64 `json:"amount"`
 }
 
 type TransferTxResult struct {
@@ -63,77 +62,77 @@ type TransferTxResult struct {
 
 // TransferTx performs a money transfer from one account to another
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
-	var result TransferTxResult
+    var result TransferTxResult
 
-	err := store.execTx(ctx, func(q *Queries) error {
-		var err error
+    err := store.execTx(ctx, func(q *Queries) error {
+        var err error
 
-		// create transfer
-		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
-			arg.FromAccountID,
-			arg.ToAccountID,
-			arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
+        result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
+            FromAccountID: arg.FromAccountID,
+            ToAccountID:   arg.ToAccountID,
+            Amount:        arg.Amount,
+        })
+        if err != nil {
+            return err
+        }
 
-		// create entries
-		negatedAmount, err := NegateNumeric(arg.Amount)
-		if err != nil {
-			return err
-		}
+        // Entries
+        result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+            AccountID: arg.FromAccountID,
+            Amount:    -arg.Amount,
+        })
+        if err != nil {
+            return err
+        }
 
-		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.FromAccountID,
-			Amount:    negatedAmount,
-		})
-		if err != nil {
-			return err
-		}
+        result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+            AccountID: arg.ToAccountID,
+            Amount:    arg.Amount,
+        })
+        if err != nil {
+            return err
+        }
 
-		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.ToAccountID,
-			Amount:    arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
+        // Update balances (deadlock-safe order)
+        if arg.FromAccountID < arg.ToAccountID {
+            result.FromAccount, result.ToAccount, err = addMoney(
+                ctx, q, 
+                arg.FromAccountID, -arg.Amount,
+                arg.ToAccountID, arg.Amount,
+            )
+        } else {
+            result.ToAccount, result.FromAccount, err = addMoney(
+                ctx, q,
+                arg.ToAccountID, arg.Amount,
+                arg.FromAccountID, -arg.Amount,
+            )
+        }
 
-		// update balances in consistent order (deadlock safe)
-		if arg.FromAccountID < arg.ToAccountID {
-			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, negatedAmount, arg.ToAccountID, arg.Amount)
-		} else {
-			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, negatedAmount)
-		}
+        return err
+    })
 
-		return nil
-	})
-
-	return result, err
+    return result, err
 }
 
 func addMoney(
-	ctx context.Context,
-	q *Queries,
-	accountID1 int64,
-	amount1 pgtype.Numeric,
-	accountID2 int64,
-	amount2 pgtype.Numeric,
+    ctx context.Context,
+    q *Queries,
+    accountID1 int64,
+    amount1 int64,
+    accountID2 int64,
+    amount2 int64,
 ) (account1 Account, account2 Account, err error) {
-	// update balances in consistent order (deadlock safe)
-	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-		ID:     accountID1,
-		Amount: amount1,
-	})
-	if err != nil {
-		return
-	}
+    account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+        ID:     accountID1,
+        Amount: amount1,
+    })
+    if err != nil {
+        return
+    }
 
-	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-		ID:     accountID2,
-		Amount: amount2,
-	})
-
-	return
+    account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+        ID:     accountID2,
+        Amount: amount2,
+    })
+    return
 }
