@@ -9,17 +9,18 @@ import (
 )
 
 type Account struct {
-	ID        int64              `json:"id"`
-	Owner     string             `json:"owner"`
-	Balance   pgtype.Numeric     `json:"balance"`
+	ID    int64  `json:"id"`
+	Owner string `json:"owner"`
+	// Balance in cents (smallest currency unit)
+	Balance   int64              `json:"balance"`
 	Currency  string             `json:"currency"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Entry struct {
 	ID int64 `json:"id"`
-	// can be +ve, or -ve
-	Amount    pgtype.Numeric     `json:"amount"`
+	// Amount in cents (can be +ve or -ve)
+	Amount    int64              `json:"amount"`
 	AccountID int64              `json:"account_id"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
@@ -28,7 +29,7 @@ type Transfer struct {
 	ID            int64 `json:"id"`
 	FromAccountID int64 `json:"from_account_id"`
 	ToAccountID   int64 `json:"to_account_id"`
-	// Must be +ve
-	Amount    pgtype.Numeric     `json:"amount"`
+	// Amount in cents (must be +ve)
+	Amount    int64              `json:"amount"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
