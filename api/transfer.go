@@ -3,76 +3,64 @@ package api
 import (
 	"database/sql"
 	"fmt"
-	"math"
-	"math/big"
 	"net/http"
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
+	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type transferRequest struct {
-	FromAccountID int64   `json:"from_account_id" binding:"required,min=1"`
-	ToAccountID   int64   `json:"to_account_id" binding:"required,min=1"`
-	Amount        float64 `json:"amount" binding:"required,gt=0"`
-	Currency      string  `json:"currency" binding:"required,currency"`
+    FromAccountID int64   `json:"from_account_id" binding:"required,min=1"`
+    ToAccountID   int64   `json:"to_account_id" binding:"required,min=1"`
+    Amount        float64 `json:"amount" binding:"required,gt=0"`
+    Currency      string  `json:"currency" binding:"required,currency"`
 }
 
 func (server *Server) createTransfer(ctx *gin.Context) {
-	var req transferRequest
+    var req transferRequest
+    if err := ctx.ShouldBindJSON(&req); err != nil {
+        ctx.JSON(http.StatusBadRequest, errorResponse(err))
+        return
+    }
 
-	err := ctx.ShouldBindJSON(&req)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
+    // Convert dollars to cents
+    amountCents := util.FloatToCents(req.Amount) // ← e.g., 10.50 → 1050
 
-	// Validate from account (includes balance check)
-	fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
-	if !valid {
-		return
-	}
+    // Validate accounts
+    fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
+    if !valid {
+        return
+    }
 
-	// Validate to account (no balance check needed)
-	if !server.validAccountCurrency(ctx, req.ToAccountID, req.Currency) {
-		return
-	}
+    if !server.validAccountCurrency(ctx, req.ToAccountID, req.Currency) {
+        return
+    }
 
-	// Check sufficient balance
-	amountInCents := int64(math.Round(req.Amount * 100))
-	amount := pgtype.Numeric{
-		Int:   big.NewInt(amountInCents),
-		Exp:   -2,
-		Valid: true,
-	}
+    // Check sufficient balance (simple integer comparison!)
+    if fromAccount.Balance < amountCents {
+        err := fmt.Errorf("insufficient balance: account %d has $%.2f, but transfer requires $%.2f",
+            req.FromAccountID,
+            util.CentsToFloat(fromAccount.Balance),
+            req.Amount,
+        )
+        ctx.JSON(http.StatusBadRequest, errorResponse(err))
+        return
+    }
 
-	// Compare using the helper function
-	if db.CompareNumeric(fromAccount.Balance, amount) < 0 {
-		err := fmt.Errorf("insufficient balance: account %d has %s %s, but transfer requires %.2f %s",
-			req.FromAccountID,
-			db.FormatMoney(fromAccount.Balance),
-			req.Currency,
-			req.Amount,
-			req.Currency,
-		)
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
+    arg := db.TransferTxParams{
+        FromAccountID: req.FromAccountID,
+        ToAccountID:   req.ToAccountID,
+        Amount:        amountCents,
+    }
 
-	arg := db.TransferTxParams{
-		FromAccountID: req.FromAccountID,
-		ToAccountID:   req.ToAccountID,
-		Amount:        amount,
-	}
+    result, err := server.store.TransferTx(ctx, arg)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+        return
+    }
 
-	result, err := server.store.TransferTx(ctx, arg)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, result)
+    ctx.JSON(http.StatusOK, result)
 }
 
 // validAccount checks if account exists and has matching currency
