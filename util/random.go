@@ -1,12 +1,9 @@
 package util
 
 import (
-	"math/big"
 	"math/rand"
 	"strings"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func init() {
@@ -47,14 +44,9 @@ func RandomCurrency() string {
 }
 
 
-func RandomMoney() pgtype.Numeric {
-	min := int64(1_000)       // $10.00
-	max := int64(5_000_000)   // $50,000.00
-	amount := min + rand.Int63n(max-min)
-
-	return pgtype.Numeric{
-		Int:   big.NewInt(amount),
-		Exp:   -2,
-		Valid: true,
-	}
+func RandomMoney() int64 {
+    // Random amount between $10.00 and $50,000.00
+    min := int64(1_000)      // $10.00 in cents
+    max := int64(5_000_000)  // $50,000.00 in cents
+    return min + rand.Int63n(max-min)
 }
