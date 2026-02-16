@@ -2,34 +2,29 @@ package api
 
 import (
 	"database/sql"
-	"math/big"
 	"net/http"
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
+	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-
 type createAccountRequest struct {
-	Owner    string         `json:"owner" binding:"required"`
-	Currency string         `json:"currency" binding:"required,currency"`
+	Owner    string `json:"owner" binding:"required"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
-
 
 func (server *Server) createAccount(ctx *gin.Context) {
 	var req createAccountRequest
-
-	err := ctx.ShouldBindJSON(&req)
-	if err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	arg := db.CreateAccountParams{
-		Owner: req.Owner,
+		Owner:    req.Owner,
 		Currency: req.Currency,
-		Balance: pgtype.Numeric{Int: big.NewInt(0), Exp: 0, Valid: true},
+		Balance:  0,
 	}
 
 	account, err := server.store.CreateAccount(ctx, arg)
@@ -44,6 +39,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 type getAccountRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
+
 func (server *Server) getAccount(ctx *gin.Context) {
 	var req getAccountRequest
 
@@ -53,10 +49,8 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
-
 	account, err := server.store.GetAccount(ctx, req.ID)
 	if err != nil {
-
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
@@ -69,9 +63,8 @@ func (server *Server) getAccount(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, account)
 }
 
-
 type listAccountsRequest struct {
-	PageID int32 `form:"page_id" binding:"required,min=1"`
+	PageID   int32 `form:"page_id" binding:"required,min=1"`
 	PageSize int32 `form:"page_size" binding:"required,min=1,max=100"`
 }
 
@@ -95,30 +88,36 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 		return
 	}
 
+
 	ctx.JSON(http.StatusOK, accounts)
 }
 
-
-type updateAccountRequest struct {
+type updateAccountURIRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
-	Balance pgtype.Numeric `json:"balance" binding:"required"`
 }
+
+type updateAccountJSONRequest struct {
+	Balance float64 `json:"balance" binding:"required,gte=0"`
+}
+
 func (server *Server) updateAccount(ctx *gin.Context) {
-	var req updateAccountRequest
-
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	var uriReq updateAccountURIRequest
+	if err := ctx.ShouldBindUri(&uriReq); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	var jsonReq updateAccountJSONRequest
+	if err := ctx.ShouldBindJSON(&jsonReq); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
+	balanceCents := util.FloatToCents(jsonReq.Balance)
 
 	arg := db.UpdateAccountParams{
-		ID: req.ID,
-		Balance: req.Balance,
+		ID:      uriReq.ID,
+		Balance: balanceCents,
 	}
 
 	account, err := server.store.UpdateAccount(ctx, arg)
@@ -134,10 +133,10 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, account)
 }
 
-
 type deleteAccountRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
+
 func (server *Server) deleteAccount(ctx *gin.Context) {
 	var req deleteAccountRequest
 
@@ -147,10 +146,8 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 		return
 	}
 
-
 	err = server.store.DeleteAccount(ctx, req.ID)
 	if err != nil {
-
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
