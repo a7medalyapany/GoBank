@@ -37,7 +37,7 @@ func (store *Store) execTx(
 	err = fn(q)
 	if err != nil {
 		if rbErr := tx.Rollback(ctx); rbErr != nil {
-			return fmt.Errorf("tx error: %v, rollback error: %v", err, rbErr)
+			return fmt.Errorf("tx error: %w, rollback error: %w", err, rbErr)
 		}
 		return err
 	}
