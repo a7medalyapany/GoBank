@@ -33,6 +33,8 @@ func (server *Server) createAccount(ctx *gin.Context) {
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
+			// Unique violation error code is "23505"
+			// Foreign key violation error code is "23503"
 			switch pgErr.Code {
 			case "23503", "23505":
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
