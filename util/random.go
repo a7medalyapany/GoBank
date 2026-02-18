@@ -30,7 +30,7 @@ func RandomOwner() string {
 
 	// e.g. ahmed.alyapany69
 	return strings.ToLower(
-		first + "." + last + string(rune('0'+number%10)),
+		first + "." + last + "." + RansomString(3) + string(rune('0'+number%10)),
 	)
 }
 
@@ -58,4 +58,14 @@ func RandomMoney() int64 {
 // RandomEmail generates a random email address using random first and last names, and a random number.
 func RandomEmail() string {
 	return fmt.Sprintf("%s@email.com", RandomOwner())
+}
+
+// RansomString generates a random string of the specified length using letters and digits.
+func RansomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var sb strings.Builder
+	for i := 0; i < n; i++ {
+		sb.WriteByte(letters[rand.Intn(len(letters))])
+	}
+	return sb.String()
 }
