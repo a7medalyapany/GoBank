@@ -31,7 +31,10 @@ func main() {
 	defer conn.Close()
 
 	store := db.NewStore(conn)
-	server := api.NewServer(store)
+	server, err := api.NewServer(store, config)
+	if err != nil {
+		panic(fmt.Sprintf("cannot create server: %v", err))
+	}
 
 	err = server.Start(serverAddress + ":" + config.PORT)
 	if err != nil {
