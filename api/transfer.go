@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
+	"github.com/a7medalyapany/GoBank.git/token"
 	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -31,6 +32,13 @@ func (server *Server) createTransfer(ctx *gin.Context) {
     // Validate accounts
     fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
     if !valid {
+        return
+    }
+
+    authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+    if fromAccount.Owner != authPayload.Username {
+        err := errors.New("account doesn't belong to the authenticated user")
+        ctx.JSON(http.StatusUnauthorized, errorResponse(err))
         return
     }
 
