@@ -11,6 +11,7 @@ FROM alpine:3.23
 WORKDIR /go-bank
 COPY --from=builder /go-bank/main .
 COPY --from=builder /go-bank/migrate ./migrate
+COPY app.env .
 COPY start.sh .
 COPY db/migration ./migration
 
