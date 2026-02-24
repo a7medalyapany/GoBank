@@ -18,21 +18,21 @@ type Config struct {
 }
 
 
+// LoadConfig reads configuration from file or environment variables.
 func LoadConfig(path string) (config Config, err error) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName("app")
-	viper.SetConfigType("env")
+    viper.AddConfigPath(path)
+    viper.SetConfigName("app")
+    viper.SetConfigType("env")
+    viper.AutomaticEnv()
 
-	viper.AutomaticEnv()
+    // Only read file if it exists — in production, env vars are enough
+    if err = viper.ReadInConfig(); err != nil {
+        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+            return // real error, not just missing file
+        }
+        err = nil // file not found is fine in production
+    }
 
-	err = viper.ReadInConfig()
-	if err != nil {
-		return
-	}
-
-	err = viper.Unmarshal(&config)
-	if err != nil {
-		return
-	}
-	return
+    err = viper.Unmarshal(&config)
+    return
 }
