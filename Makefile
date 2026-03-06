@@ -19,6 +19,12 @@ migratedown:
 migratedown1:
 	migrate -path db/migration -database "postgresql://root:password@localhost:5432/bank?sslmode=disable" -verbose down 1
 
+db_docs:
+	dbdocs build doc/db.dbml
+
+db_schema:
+	 dbml2sql doc/db.dbml -o doc/schema.sql --postgres
+
 sqlc:
 	sqlc generate
 
@@ -28,4 +34,4 @@ test:
 server:
 	go run main.go
 
-.PHONY: createdb dropdb postgres migrateup migratedown migrateup1 migratedown1 sqlc test server
+.PHONY: createdb dropdb postgres migrateup migratedown migrateup1 migratedown1 db_docs db_schema sqlc test server
