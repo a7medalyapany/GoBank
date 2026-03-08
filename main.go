@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
 	"github.com/a7medalyapany/GoBank.git/api"
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
@@ -14,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
@@ -33,6 +37,7 @@ func main() {
 	// comment this out once you fully migrate to gRPC
 	// runGinServer(store, config)
 
+	go runGatewayServer(store, config)
 	runGRPCServer(store, config)
 }
 
@@ -73,5 +78,47 @@ func runGRPCServer(store *db.Store, config util.Config,) {
 
 	if err := grpcServer.Serve(listener); err != nil {
 		panic(fmt.Sprintf("cannot serve gRPC: %v", err))
+	}
+}
+
+// runGatewayServer starts the gRPC-Gateway server to translate REST calls to gRPC.
+func runGatewayServer(store *db.Store, config util.Config,) {
+	server, err := gapi.NewServer(store, config)
+	if err != nil {
+		panic(fmt.Sprintf("cannot create gRPC server: %v", err))
+	}
+
+	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+
+	grpcMux := runtime.NewServeMux(jsonOption)
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err = pb.RegisterGoBankHandlerServer(ctx, grpcMux, server)
+	if err != nil {
+		panic(fmt.Sprintf("cannot register gRPC gateway: %v", err))
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", grpcMux)
+
+	httpAddress := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.PORT)
+	listener, err := net.Listen("tcp", httpAddress)
+	if err != nil {
+		panic(fmt.Sprintf("cannot create listener: %v", err))
+	}
+
+	log.Printf("http gateway listening at %s", listener.Addr().String())
+
+	if err := http.Serve(listener, mux); err != nil {
+		panic(fmt.Sprintf("cannot serve http gateway: %v", err))
 	}
 }
