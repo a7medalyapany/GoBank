@@ -174,7 +174,7 @@ const file_rpc_login_user_proto_rawDesc = "" +
 	"\x17access_token_expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x14accessTokenExpiresAt\x12#\n" +
 	"\rrefresh_token\x18\x04 \x01(\tR\frefreshToken\x12S\n" +
 	"\x18refresh_token_expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x15refreshTokenExpiresAt\x12\x1c\n" +
-	"\x04user\x18\x06 \x01(\v2\b.pb.UserR\x04userB$Z\"github.com/a7medalyapany/GoBank/pbb\x06proto3"
+	"\x04user\x18\x06 \x01(\v2\b.pb.UserR\x04userB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var (
 	file_rpc_login_user_proto_rawDescOnce sync.Once
