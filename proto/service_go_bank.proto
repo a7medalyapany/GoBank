@@ -6,8 +6,7 @@ import "user.proto";
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
 
-option go_package = "github.com/a7medalyapany/GoBank/pb";
-
+option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
 // GoBank provides user management and authentication APIs.
 service GoBank {
