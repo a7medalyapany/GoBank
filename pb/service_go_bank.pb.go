@@ -29,7 +29,7 @@ const file_service_go_bank_proto_rawDesc = "" +
 	"\x06GoBank\x12=\n" +
 	"\n" +
 	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\x00\x12:\n" +
-	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\x00B$Z\"github.com/a7medalyapany/GoBank/pbb\x06proto3"
+	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\x00B(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var file_service_go_bank_proto_goTypes = []any{
 	(*CreateUserRequest)(nil),  // 0: pb.CreateUserRequest

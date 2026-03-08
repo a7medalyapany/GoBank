@@ -4,7 +4,7 @@ package pb;
 
 import "user.proto";
 
-option go_package = "github.com/a7medalyapany/GoBank/pb";
+option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
 
 message CreateUserRequest {
