@@ -16,6 +16,7 @@ type Config struct {
 	TOKEN_SYMMETRIC_KEY	string 			`mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	ACCESS_TOKEN_DURATION time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
     REFRESH_TOKEN_DURATION time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+    GRPC_SERVER_PORT		string 			`mapstructure:"GRPC_SERVER_PORT"`
 }
 
 
