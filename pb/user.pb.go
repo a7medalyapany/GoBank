@@ -7,6 +7,7 @@
 package pb
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -22,11 +23,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// User represents the public profile of a GoBank account.
+// Sensitive fields (hashed_password) are never included.
 type User struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Username          string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	FullName          string                 `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	Email             string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Username string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	FullName string                 `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	Email    string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	// Zero value (0001-01-01) means the password has never been changed.
 	PasswordChangedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=password_changed_at,json=passwordChangedAt,proto3" json:"password_changed_at,omitempty"`
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -103,14 +107,15 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\"\xdc\x01\n" +
-	"\x04User\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x12\x1b\n" +
-	"\tfull_name\x18\x02 \x01(\tR\bfullName\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\x12J\n" +
-	"\x13password_changed_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x11passwordChangedAt\x129\n" +
+	"user.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x87\x04\n" +
+	"\x04User\x12O\n" +
+	"\busername\x18\x01 \x01(\tB3\x92A02\x1dUnique alphanumeric username.J\x0f\"john.doe.abc1\"R\busername\x12L\n" +
+	"\tfull_name\x18\x02 \x01(\tB/\x92A,2\x1eFull display name of the user.J\n" +
+	"\"John Doe\"R\bfullName\x12H\n" +
+	"\x05email\x18\x03 \x01(\tB2\x92A/2\x19Registered email address.J\x12\"john@example.com\"R\x05email\x12\xa8\x01\n" +
+	"\x13password_changed_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\\\x92AY2WUTC timestamp of the last password change. Zero value means password was never changed.R\x11passwordChangedAt\x12k\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB0\x92A-2+UTC timestamp when the account was created.R\tcreatedAtB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var (
 	file_user_proto_rawDescOnce sync.Once

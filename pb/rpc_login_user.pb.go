@@ -7,6 +7,7 @@
 package pb
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -23,9 +24,11 @@ const (
 )
 
 type LoginUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Username of the account to authenticate.
+	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	// Account password (plain text — sent over HTTPS only).
+	Password      string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,15 +78,21 @@ func (x *LoginUserRequest) GetPassword() string {
 }
 
 type LoginUserResponse struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	SessionId             string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	AccessToken           string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	AccessTokenExpiresAt  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=access_token_expires_at,json=accessTokenExpiresAt,proto3" json:"access_token_expires_at,omitempty"`
-	RefreshToken          string                 `protobuf:"bytes,4,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID of the session created for this login.
+	SessionId string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// Short-lived PASETO access token. Include as: Authorization: Bearer <token>
+	AccessToken string `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	// Expiry timestamp of the access token.
+	AccessTokenExpiresAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=access_token_expires_at,json=accessTokenExpiresAt,proto3" json:"access_token_expires_at,omitempty"`
+	// Long-lived refresh token. Use to obtain new access tokens without re-login.
+	RefreshToken string `protobuf:"bytes,4,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	// Expiry timestamp of the refresh token.
 	RefreshTokenExpiresAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=refresh_token_expires_at,json=refreshTokenExpiresAt,proto3" json:"refresh_token_expires_at,omitempty"`
-	User                  *User                  `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Authenticated user's public profile (no password).
+	User          *User `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LoginUserResponse) Reset() {
@@ -163,18 +172,18 @@ var File_rpc_login_user_proto protoreflect.FileDescriptor
 const file_rpc_login_user_proto_rawDesc = "" +
 	"\n" +
 	"\x14rpc_login_user.proto\x12\x02pb\x1a\n" +
-	"user.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"J\n" +
-	"\x10LoginUserRequest\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\xc0\x02\n" +
-	"\x11LoginUserResponse\x12\x1d\n" +
+	"user.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe0\x01\n" +
+	"\x10LoginUserRequest\x12Z\n" +
+	"\busername\x18\x01 \x01(\tB>\x92A;2(Username of the account to authenticate.J\x0f\"john.doe.abc1\"R\busername\x12p\n" +
+	"\bpassword\x18\x02 \x01(\tBT\x92AQ22Account password. Transmitted securely over HTTPS.J\x10\"supersecret123\"\xa2\x02\bpasswordR\bpassword\"\x86\x06\n" +
+	"\x11LoginUserResponse\x12O\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\tR\tsessionId\x12!\n" +
-	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12Q\n" +
-	"\x17access_token_expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x14accessTokenExpiresAt\x12#\n" +
-	"\rrefresh_token\x18\x04 \x01(\tR\frefreshToken\x12S\n" +
-	"\x18refresh_token_expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x15refreshTokenExpiresAt\x12\x1c\n" +
-	"\x04user\x18\x06 \x01(\v2\b.pb.UserR\x04userB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
+	"session_id\x18\x01 \x01(\tB0\x92A-2+UUID of the session created for this login.R\tsessionId\x12t\n" +
+	"\faccess_token\x18\x02 \x01(\tBQ\x92AN2LShort-lived PASETO access token. Include as: `Authorization: Bearer <token>`R\vaccessToken\x12\x84\x01\n" +
+	"\x17access_token_expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB1\x92A.2,UTC timestamp when the access token expires.R\x14accessTokenExpiresAt\x12\x8b\x01\n" +
+	"\rrefresh_token\x18\x04 \x01(\tBf\x92Ac2aLong-lived refresh token. Store securely. Use at /v1/auth/renew_access to get a new access token.R\frefreshToken\x12\xaf\x01\n" +
+	"\x18refresh_token_expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampBZ\x92AW2UUTC timestamp when the refresh token expires. After this, the user must log in again.R\x15refreshTokenExpiresAt\x12c\n" +
+	"\x04user\x18\x06 \x01(\v2\b.pb.UserBE\x92AB2@Authenticated user's public profile. Password is never returned.R\x04userB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var (
 	file_rpc_login_user_proto_rawDescOnce sync.Once

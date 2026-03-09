@@ -7,6 +7,7 @@
 package pb
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,11 +23,20 @@ const (
 )
 
 type CreateUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	FullName      string                 `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique username. Alphanumeric only, no spaces.
+	// example: "john.doe.abc1"
+	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	// Full display name of the user.
+	// example: "John Doe"
+	FullName string `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	// Valid email address. Must be unique across all accounts.
+	// example: "john@example.com"
+	Email string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	// Password for the account. Minimum 8 characters.
+	// Stored as a bcrypt hash — never in plain text.
+	// example: "supersecret123"
+	Password      string `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -90,8 +100,9 @@ func (x *CreateUserRequest) GetPassword() string {
 }
 
 type CreateUserResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The newly created user (password excluded).
+	User          *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -138,12 +149,13 @@ var File_rpc_create_user_proto protoreflect.FileDescriptor
 const file_rpc_create_user_proto_rawDesc = "" +
 	"\n" +
 	"\x15rpc_create_user.proto\x12\x02pb\x1a\n" +
-	"user.proto\"~\n" +
-	"\x11CreateUserRequest\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x12\x1b\n" +
-	"\tfull_name\x18\x02 \x01(\tR\bfullName\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\"2\n" +
+	"user.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xda\x03\n" +
+	"\x11CreateUserRequest\x12\x87\x01\n" +
+	"\busername\x18\x01 \x01(\tBk\x92Ah2>Unique alphanumeric username. No spaces or special characters.J\x0f\"john.doe.abc1\"x2\x80\x01\x03\x8a\x01\x0f^[a-zA-Z0-9.]+$R\busername\x12Q\n" +
+	"\tfull_name\x18\x02 \x01(\tB4\x92A12\x1eFull display name of the user.J\n" +
+	"\"John Doe\"xd\x80\x01\x02R\bfullName\x12g\n" +
+	"\x05email\x18\x03 \x01(\tBQ\x92AN28Valid email address. Must be unique across all accounts.J\x12\"john@example.com\"R\x05email\x12\x7f\n" +
+	"\bpassword\x18\x04 \x01(\tBc\x92A`2>Account password. Minimum 8 characters. Stored as bcrypt hash.J\x10\"supersecret123\"\x80\x01\b\xa2\x02\bpasswordR\bpassword\"2\n" +
 	"\x12CreateUserResponse\x12\x1c\n" +
 	"\x04user\x18\x01 \x01(\v2\b.pb.UserR\x04userB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 

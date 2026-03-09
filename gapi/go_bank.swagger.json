@@ -1,0 +1,320 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "GoBank API",
+    "description": "A production-grade banking API built with Go, gRPC, and gRPC-Gateway.\n\nSupports user registration, authentication with access/refresh tokens (PASETO), multi-currency accounts, and atomic money transfers with deadlock-safe transactions.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Ahmed Alyapany",
+      "url": "https://github.com/a7medalyapany/GoBank",
+      "email": "a7medalyapany@gmail.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "tags": [
+    {
+      "name": "GoBank"
+    }
+  ],
+  "host": "localhost:8080",
+  "basePath": "/",
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/auth/login": {
+      "post": {
+        "summary": "Login and obtain tokens",
+        "description": "Authenticates credentials and returns a PASETO access token and a refresh token. Store the refresh token securely — it is used to renew access tokens.",
+        "operationId": "LoginUser",
+        "responses": {
+          "200": {
+            "description": "Authentication successful. Returns token pair and user info.",
+            "schema": {
+              "$ref": "#/definitions/pbLoginUserResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid password.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "User not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error — something went wrong on our end.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbLoginUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/users": {
+      "post": {
+        "summary": "Register a new user",
+        "description": "Creates a new user account. Username and email must be unique.",
+        "operationId": "CreateUser",
+        "responses": {
+          "200": {
+            "description": "User created successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateUserResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Username or email already exists.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Not Found — the requested resource does not exist.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error — something went wrong on our end.",
+            "schema": {
+              "$ref": ".pb.ErrorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "pbCreateUserRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "example": "john.doe.abc1",
+          "description": "Unique alphanumeric username. No spaces or special characters.",
+          "title": "Unique username. Alphanumeric only, no spaces.\nexample: \"john.doe.abc1\"",
+          "maxLength": 50,
+          "minLength": 3,
+          "pattern": "^[a-zA-Z0-9.]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "example": "John Doe",
+          "description": "Full display name of the user.",
+          "title": "Full display name of the user.\nexample: \"John Doe\"",
+          "maxLength": 100,
+          "minLength": 2
+        },
+        "email": {
+          "type": "string",
+          "example": "john@example.com",
+          "description": "Valid email address. Must be unique across all accounts.",
+          "title": "Valid email address. Must be unique across all accounts.\nexample: \"john@example.com\""
+        },
+        "password": {
+          "type": "string",
+          "format": "password",
+          "example": "supersecret123",
+          "description": "Account password. Minimum 8 characters. Stored as bcrypt hash.",
+          "title": "Password for the account. Minimum 8 characters.\nStored as a bcrypt hash — never in plain text.\nexample: \"supersecret123\"",
+          "minLength": 8
+        }
+      }
+    },
+    "pbCreateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/pbUser",
+          "description": "The newly created user (password excluded)."
+        }
+      }
+    },
+    "pbLoginUserRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "example": "john.doe.abc1",
+          "description": "Username of the account to authenticate."
+        },
+        "password": {
+          "type": "string",
+          "format": "password",
+          "example": "supersecret123",
+          "description": "Account password. Transmitted securely over HTTPS."
+        }
+      }
+    },
+    "pbLoginUserResponse": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "UUID of the session created for this login."
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "Short-lived PASETO access token. Include as: `Authorization: Bearer \u003ctoken\u003e`",
+          "title": "Short-lived PASETO access token. Include as: Authorization: Bearer \u003ctoken\u003e"
+        },
+        "accessTokenExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the access token expires."
+        },
+        "refreshToken": {
+          "type": "string",
+          "description": "Long-lived refresh token. Store securely. Use at /v1/auth/renew_access to get a new access token."
+        },
+        "refreshTokenExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the refresh token expires. After this, the user must log in again."
+        },
+        "user": {
+          "$ref": "#/definitions/pbUser",
+          "description": "Authenticated user's public profile. Password is never returned."
+        }
+      }
+    },
+    "pbUser": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "example": "john.doe.abc1",
+          "description": "Unique alphanumeric username."
+        },
+        "fullName": {
+          "type": "string",
+          "example": "John Doe",
+          "description": "Full display name of the user."
+        },
+        "email": {
+          "type": "string",
+          "example": "john@example.com",
+          "description": "Registered email address."
+        },
+        "passwordChangedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp of the last password change. Zero value means password was never changed."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the account was created."
+        }
+      },
+      "description": "User represents the public profile of a GoBank account.\nSensitive fields (hashed_password) are never included."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "description": "Enter: **Bearer \u0026lt;your_access_token\u0026gt;**",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}
