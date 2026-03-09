@@ -7,6 +7,7 @@
 package pb
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -25,12 +26,49 @@ var File_service_go_bank_proto protoreflect.FileDescriptor
 
 const file_service_go_bank_proto_rawDesc = "" +
 	"\n" +
-	"\x15service_go_bank.proto\x12\x02pb\x1a\x1cgoogle/api/annotations.proto\x1a\n" +
-	"user.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto2\xb6\x01\n" +
-	"\x06GoBank\x12W\n" +
+	"\x15service_go_bank.proto\x12\x02pb\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\n" +
+	"user.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto2\xb6\x05\n" +
+	"\x06GoBank\x12\x8e\x02\n" +
 	"\n" +
-	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/create_user\x12S\n" +
-	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/login_userB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
+	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\xd0\x01\x92A\xb8\x01\n" +
+	"\x04Auth\x12\x13Register a new user\x1a>Creates a new user account. Username and email must be unique.*\n" +
+	"CreateUserJ#\n" +
+	"\x03200\x12\x1c\n" +
+	"\x1aUser created successfully.J*\n" +
+	"\x03403\x12#\n" +
+	"!Username or email already exists.\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/users\x12\x9a\x03\n" +
+	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\xdf\x02\x92A\xc2\x02\n" +
+	"\x04Auth\x12\x17Login and obtain tokens\x1a\x98\x01Authenticates credentials and returns a PASETO access token and a refresh token. Store the refresh token securely — it is used to renew access tokens.*\tLoginUserJE\n" +
+	"\x03200\x12>\n" +
+	"<Authentication successful. Returns token pair and user info.J\x1a\n" +
+	"\x03401\x12\x13\n" +
+	"\x11Invalid password.J\x18\n" +
+	"\x03404\x12\x11\n" +
+	"\x0fUser not found.\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/auth/loginB\x83\b\x92A\xd7\a\x12\x81\x03\n" +
+	"\n" +
+	"GoBank API\x12\xeb\x01A production-grade banking API built with Go, gRPC, and gRPC-Gateway.\n" +
+	"\n" +
+	"Supports user registration, authentication with access/refresh tokens (PASETO), multi-currency accounts, and atomic money transfers with deadlock-safe transactions.\"R\n" +
+	"\x0eAhmed Alyapany\x12'https://github.com/a7medalyapany/GoBank\x1a\x17a7medalyapany@gmail.com**\n" +
+	"\x03MIT\x12#https://opensource.org/licenses/MIT2\x051.0.0\x1a\x0elocalhost:8080\"\x01/*\x02\x01\x022\x10application/json:\x10application/jsonRY\n" +
+	"\x03400\x12R\n" +
+	"9Bad Request — invalid input or missing required fields.\x12\x15\n" +
+	"\x13\x1a\x11.pb.ErrorResponseRQ\n" +
+	"\x03401\x12J\n" +
+	"1Unauthorized — missing or invalid Bearer token.\x12\x15\n" +
+	"\x13\x1a\x11.pb.ErrorResponseRd\n" +
+	"\x03403\x12]\n" +
+	"DForbidden — authenticated but not allowed to access this resource.\x12\x15\n" +
+	"\x13\x1a\x11.pb.ErrorResponseRT\n" +
+	"\x03404\x12M\n" +
+	"4Not Found — the requested resource does not exist.\x12\x15\n" +
+	"\x13\x1a\x11.pb.ErrorResponseRZ\n" +
+	"\x03500\x12S\n" +
+	":Internal Server Error — something went wrong on our end.\x12\x15\n" +
+	"\x13\x1a\x11.pb.ErrorResponseZP\n" +
+	"N\n" +
+	"\n" +
+	"BearerAuth\x12@\b\x02\x12+Enter: **Bearer &lt;your_access_token&gt;**\x1a\rAuthorization \x02Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var file_service_go_bank_proto_goTypes = []any{
 	(*CreateUserRequest)(nil),  // 0: pb.CreateUserRequest

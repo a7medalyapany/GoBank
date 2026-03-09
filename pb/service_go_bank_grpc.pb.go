@@ -29,9 +29,15 @@ const (
 //
 // GoBank provides user management and authentication APIs.
 type GoBankClient interface {
-	// CreateUser registers a new user.
+	// CreateUser registers a new user account.
+	//
+	// Validates uniqueness of username and email. Password is hashed
+	// with bcrypt before storage — it is never persisted in plain text.
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
-	// LoginUser authenticates a user and returns tokens.
+	// LoginUser authenticates a user and returns a PASETO access + refresh token pair.
+	//
+	// Access tokens are short-lived. Use the refresh token via /v1/auth/renew_access
+	// to obtain a new access token without re-authenticating.
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
 }
 
@@ -69,9 +75,15 @@ func (c *goBankClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts
 //
 // GoBank provides user management and authentication APIs.
 type GoBankServer interface {
-	// CreateUser registers a new user.
+	// CreateUser registers a new user account.
+	//
+	// Validates uniqueness of username and email. Password is hashed
+	// with bcrypt before storage — it is never persisted in plain text.
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
-	// LoginUser authenticates a user and returns tokens.
+	// LoginUser authenticates a user and returns a PASETO access + refresh token pair.
+	//
+	// Access tokens are short-lived. Use the refresh token via /v1/auth/renew_access
+	// to obtain a new access token without re-authenticating.
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
 	mustEmbedUnimplementedGoBankServer()
 }
