@@ -3,22 +3,70 @@ syntax = "proto3";
 package pb;
 
 import "user.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
 message LoginUserRequest {
-	string username = 1;
-	string password = 2;
-}
+  // Username of the account to authenticate.
+  string username = 1 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Username of the account to authenticate."
+      example: '"john.doe.abc1"'
+    }
+  ];
 
+  // Account password (plain text — sent over HTTPS only).
+  string password = 2 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Account password. Transmitted securely over HTTPS."
+      format: "password"
+      example: '"supersecret123"'
+    }
+  ];
+}
 
 message LoginUserResponse {
-	string session_id = 1;
-	string access_token = 2;
-	google.protobuf.Timestamp access_token_expires_at = 3;
-	string refresh_token = 4;
-	google.protobuf.Timestamp refresh_token_expires_at = 5;
-	User user = 6;
-}
+  // UUID of the session created for this login.
+  string session_id = 1 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "UUID of the session created for this login."
+    }
+  ];
 
+  // Short-lived PASETO access token. Include as: Authorization: Bearer <token>
+  string access_token = 2 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Short-lived PASETO access token. Include as: `Authorization: Bearer <token>`"
+    }
+  ];
+
+  // Expiry timestamp of the access token.
+  google.protobuf.Timestamp access_token_expires_at = 3 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "UTC timestamp when the access token expires."
+    }
+  ];
+
+  // Long-lived refresh token. Use to obtain new access tokens without re-login.
+  string refresh_token = 4 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Long-lived refresh token. Store securely. Use at /v1/auth/renew_access to get a new access token."
+    }
+  ];
+
+  // Expiry timestamp of the refresh token.
+  google.protobuf.Timestamp refresh_token_expires_at = 5 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "UTC timestamp when the refresh token expires. After this, the user must log in again."
+    }
+  ];
+
+  // Authenticated user's public profile (no password).
+  User user = 6 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Authenticated user's public profile. Password is never returned."
+    }
+  ];
+}

@@ -2,15 +2,45 @@ syntax = "proto3";
 
 package pb;
 
-
 import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
+// User represents the public profile of a GoBank account.
+// Sensitive fields (hashed_password) are never included.
 message User {
-	string username = 1;
-	string full_name = 2;
-	string email = 3;
-	google.protobuf.Timestamp password_changed_at = 4;
-	google.protobuf.Timestamp created_at = 5;
+  string username = 1 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Unique alphanumeric username."
+      example: '"john.doe.abc1"'
+    }
+  ];
+
+  string full_name = 2 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Full display name of the user."
+      example: '"John Doe"'
+    }
+  ];
+
+  string email = 3 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Registered email address."
+      example: '"john@example.com"'
+    }
+  ];
+
+  // Zero value (0001-01-01) means the password has never been changed.
+  google.protobuf.Timestamp password_changed_at = 4 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "UTC timestamp of the last password change. Zero value means password was never changed."
+    }
+  ];
+
+  google.protobuf.Timestamp created_at = 5 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "UTC timestamp when the account was created."
+    }
+  ];
 }

@@ -3,19 +3,57 @@ syntax = "proto3";
 package pb;
 
 import "user.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
-
 message CreateUserRequest {
-	string username = 1;
-	string full_name = 2;
-	string email = 3;
-	string password = 4;
-}
+  // Unique username. Alphanumeric only, no spaces.
+  // example: "john.doe.abc1"
+  string username = 1 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Unique alphanumeric username. No spaces or special characters."
+      min_length: 3
+      max_length: 50
+      pattern: "^[a-zA-Z0-9.]+$"
+      example: '"john.doe.abc1"'
+    }
+  ];
 
+  // Full display name of the user.
+  // example: "John Doe"
+  string full_name = 2 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Full display name of the user."
+      min_length: 2
+      max_length: 100
+      example: '"John Doe"'
+    }
+  ];
+
+  // Valid email address. Must be unique across all accounts.
+  // example: "john@example.com"
+  string email = 3 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Valid email address. Must be unique across all accounts."
+      example: '"john@example.com"'
+    }
+  ];
+
+  // Password for the account. Minimum 8 characters.
+  // Stored as a bcrypt hash — never in plain text.
+  // example: "supersecret123"
+  string password = 4 [
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      description: "Account password. Minimum 8 characters. Stored as bcrypt hash."
+      min_length: 8
+      format: "password"
+      example: '"supersecret123"'
+    }
+  ];
+}
 
 message CreateUserResponse {
-	User user = 1;
+  // The newly created user (password excluded).
+  User user = 1;
 }
-
