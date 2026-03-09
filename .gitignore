@@ -4,3 +4,7 @@
 
 # db docs
 *.log
+
+# generated
+doc/swagger/go_bank.swagger.json
+gapi/go_bank.swagger.json
