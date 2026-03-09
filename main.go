@@ -34,16 +34,13 @@ func main() {
 
 	store := db.NewStore(conn)
 
-	// comment this out once you fully migrate to gRPC
-	// runGinServer(store, config)
-
 	go runGatewayServer(store, config)
 	runGRPCServer(store, config)
 }
 
 // runGinServer starts the HTTP REST server using Gin.
-// Keep this around if you still want to serve REST alongside gRPC.
-func runGinServer(store *db.Store, config util.Config,) {
+// Uncomment in main() if you want to serve Gin REST alongside gRPC.
+func runGinServer(store *db.Store, config util.Config) {
 	server, err := api.NewServer(store, config)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create Gin server: %v", err))
@@ -56,7 +53,7 @@ func runGinServer(store *db.Store, config util.Config,) {
 }
 
 // runGRPCServer starts the gRPC server.
-func runGRPCServer(store *db.Store, config util.Config,) {
+func runGRPCServer(store *db.Store, config util.Config) {
 	server, err := gapi.NewServer(store, config)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create gRPC server: %v", err))
@@ -64,8 +61,6 @@ func runGRPCServer(store *db.Store, config util.Config,) {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterGoBankServer(grpcServer, server)
-
-	// reflection allows Evans and other tools to discover services at runtime
 	reflection.Register(grpcServer)
 
 	address := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.GRPC_SERVER_PORT)
@@ -81,11 +76,17 @@ func runGRPCServer(store *db.Store, config util.Config,) {
 	}
 }
 
-// runGatewayServer starts the gRPC-Gateway server to translate REST calls to gRPC.
-func runGatewayServer(store *db.Store, config util.Config,) {
+// runGatewayServer starts the gRPC-Gateway HTTP server.
+//
+// Routes:
+//
+//	/swagger/          → custom branded Swagger UI  (gapi.SwaggerHandler)
+//	/swagger/doc.json  → raw embedded OpenAPI spec  (gapi.SwaggerHandler)
+//	/*                 → gRPC-Gateway (REST → gRPC translation)
+func runGatewayServer(store *db.Store, config util.Config) {
 	server, err := gapi.NewServer(store, config)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create gRPC server: %v", err))
+		panic(fmt.Sprintf("cannot create gRPC-Gateway server: %v", err))
 	}
 
 	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
@@ -98,27 +99,33 @@ func runGatewayServer(store *db.Store, config util.Config,) {
 	})
 
 	grpcMux := runtime.NewServeMux(jsonOption)
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = pb.RegisterGoBankHandlerServer(ctx, grpcMux, server)
-	if err != nil {
-		panic(fmt.Sprintf("cannot register gRPC gateway: %v", err))
+	if err = pb.RegisterGoBankHandlerServer(ctx, grpcMux, server); err != nil {
+		panic(fmt.Sprintf("cannot register gRPC-Gateway handler: %v", err))
 	}
 
 	mux := http.NewServeMux()
+
+	// Swagger UI + raw spec — must be registered before the catch-all
+	mux.HandleFunc("/swagger/", gapi.SwaggerHandler)
+
+	// All other traffic → gRPC-Gateway
 	mux.Handle("/", grpcMux)
 
 	httpAddress := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.PORT)
 	listener, err := net.Listen("tcp", httpAddress)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create listener: %v", err))
+		panic(fmt.Sprintf("cannot create HTTP listener: %v", err))
 	}
 
-	log.Printf("http gateway listening at %s", listener.Addr().String())
+	log.Printf("HTTP gateway listening at    http://%s", httpAddress)
+	log.Printf("Swagger UI available at      http://%s/swagger/", httpAddress)
+	log.Printf("OpenAPI spec available at    http://%s/swagger/doc.json", httpAddress)
 
-	if err := http.Serve(listener, mux); err != nil {
-		panic(fmt.Sprintf("cannot serve http gateway: %v", err))
+	if err = http.Serve(listener, mux); err != nil {
+		panic(fmt.Sprintf("cannot serve HTTP gateway: %v", err))
 	}
 }
