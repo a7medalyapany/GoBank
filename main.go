@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
@@ -15,6 +16,8 @@ import (
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -84,7 +87,7 @@ func runGRPCServer(store *db.Store, config util.Config) {
 //	/swagger/doc.json  → raw embedded OpenAPI spec
 //	/*                 → gRPC-Gateway (REST → gRPC translation)
 func runGatewayServer(store *db.Store, config util.Config) {
-	server, err := gapi.NewServer(store, config)
+	_, err := gapi.NewServer(store, config)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create gateway server: %v", err))
 	}
@@ -98,12 +101,26 @@ func runGatewayServer(store *db.Store, config util.Config) {
 		},
 	})
 
-	grpcMux := runtime.NewServeMux(jsonOption)
+	grpcMux := runtime.NewServeMux(
+		jsonOption,
+		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+			if strings.ToLower(key) == "authorization" {
+				return "authorization", true
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
+	)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err = pb.RegisterGoBankHandlerServer(ctx, grpcMux, server); err != nil {
+	// ← This routes HTTP → actual gRPC server (interceptor runs)
+	// instead of RegisterGoBankHandlerServer which bypasses interceptor
+	grpcEndpoint := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.GRPC_SERVER_PORT)
+	err = pb.RegisterGoBankHandlerFromEndpoint(ctx, grpcMux, grpcEndpoint, []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	})
+	if err != nil {
 		panic(fmt.Sprintf("cannot register gateway handler: %v", err))
 	}
 
