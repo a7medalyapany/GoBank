@@ -7,7 +7,7 @@
     "contact": {
       "name": "Ahmed Alyapany",
       "url": "https://github.com/a7medalyapany/GoBank",
-      "email": "a7medalyapany@gmail.com"
+      "email": "ahmedalyapany1@gmail.com"
     },
     "license": {
       "name": "MIT",
@@ -32,23 +32,326 @@
     "application/json"
   ],
   "paths": {
+    "/v1/accounts": {
+      "get": {
+        "summary": "List accounts",
+        "description": "Returns a paginated list of all accounts owned by the authenticated user.",
+        "operationId": "ListAccounts",
+        "responses": {
+          "200": {
+            "description": "Paginated list of accounts.",
+            "schema": {
+              "$ref": "#/definitions/pbListAccountsResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Not Found — the requested resource does not exist.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageId",
+            "description": "1-based page number.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageSize",
+            "description": "Number of accounts per page. Max 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create an account",
+        "description": "Creates a new currency account for the authenticated user. Each user may hold at most one account per currency.",
+        "operationId": "CreateAccount",
+        "responses": {
+          "200": {
+            "description": "Account created successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateAccountResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Account for this currency already exists.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Not Found — the requested resource does not exist.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateAccountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/accounts/{id}": {
+      "get": {
+        "summary": "Get an account",
+        "description": "Retrieves a single account by ID. The account must belong to the authenticated user.",
+        "operationId": "GetAccount",
+        "responses": {
+          "200": {
+            "description": "Account retrieved successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbGetAccountResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Account belongs to a different user.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Account not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "ID of the account to retrieve. Must belong to the authenticated user.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete an account",
+        "description": "Permanently deletes an account. The account must belong to the authenticated user.",
+        "operationId": "DeleteAccount",
+        "responses": {
+          "200": {
+            "description": "Account deleted.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteAccountResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Account belongs to a different user.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Account not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "ID of the account to delete. Must belong to the authenticated user.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Update account balance",
+        "description": "Sets the balance of an account. The account must belong to the authenticated user. Balance must be \u003e= 0.",
+        "operationId": "UpdateAccount",
+        "responses": {
+          "200": {
+            "description": "Account updated successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateAccountResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Account belongs to a different user.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Account not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "ID of the account to update. Must belong to the authenticated user.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GoBankUpdateAccountBody"
+            }
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/auth/login": {
       "post": {
         "summary": "Login and obtain tokens",
-        "description": "Authenticates credentials and returns a PASETO access token and a refresh token. Store the refresh token securely — it is used to renew access tokens.",
+        "description": "Authenticates credentials and returns a PASETO access token and a refresh token.",
         "operationId": "LoginUser",
         "responses": {
           "200": {
-            "description": "Authentication successful. Returns token pair and user info.",
+            "description": "Authentication successful.",
             "schema": {
               "$ref": "#/definitions/pbLoginUserResponse"
             }
           },
           "400": {
             "description": "Bad Request — invalid input or missing required fields.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "schema": {}
           },
           "401": {
             "description": "Invalid password.",
@@ -56,19 +359,15 @@
           },
           "403": {
             "description": "Forbidden — authenticated but not allowed to access this resource.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "schema": {}
           },
           "404": {
             "description": "User not found.",
             "schema": {}
           },
           "500": {
-            "description": "Internal Server Error — something went wrong on our end.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "description": "Internal Server Error.",
+            "schema": {}
           },
           "default": {
             "description": "An unexpected error response.",
@@ -89,13 +388,128 @@
         ],
         "tags": [
           "Auth"
+        ],
+        "security": []
+      }
+    },
+    "/v1/auth/renew_access": {
+      "post": {
+        "summary": "Renew access token",
+        "description": "Issues a new short-lived access token using a valid refresh token. Validated against the session store — blocked or mismatched sessions are rejected.",
+        "operationId": "RenewAccessToken",
+        "responses": {
+          "200": {
+            "description": "New access token issued.",
+            "schema": {
+              "$ref": "#/definitions/pbRenewAccessTokenResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Refresh token invalid, expired, or session blocked.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Session not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRenewAccessTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Auth"
+        ],
+        "security": []
+      }
+    },
+    "/v1/transfers": {
+      "post": {
+        "summary": "Create a transfer",
+        "description": "Atomically transfers funds between two accounts. The source account must belong to the authenticated user. Both accounts must hold the specified currency. Uses deadlock-safe transaction ordering.",
+        "operationId": "CreateTransfer",
+        "responses": {
+          "200": {
+            "description": "Transfer completed. Returns transfer record, entries, and updated account snapshots.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateTransferResponse"
+            }
+          },
+          "400": {
+            "description": "Insufficient balance or currency mismatch.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Source account does not belong to the authenticated user.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Source or destination account not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateTransferRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Transfers"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ]
       }
     },
     "/v1/users": {
       "post": {
         "summary": "Register a new user",
-        "description": "Creates a new user account. Username and email must be unique.",
+        "description": "Creates a new user account. Username and email must be unique. Password is bcrypt-hashed before storage.",
         "operationId": "CreateUser",
         "responses": {
           "200": {
@@ -106,15 +520,11 @@
           },
           "400": {
             "description": "Bad Request — invalid input or missing required fields.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "schema": {}
           },
           "401": {
             "description": "Unauthorized — missing or invalid Bearer token.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "schema": {}
           },
           "403": {
             "description": "Username or email already exists.",
@@ -122,15 +532,11 @@
           },
           "404": {
             "description": "Not Found — the requested resource does not exist.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "schema": {}
           },
           "500": {
-            "description": "Internal Server Error — something went wrong on our end.",
-            "schema": {
-              "$ref": ".pb.ErrorResponse"
-            }
+            "description": "Internal Server Error.",
+            "schema": {}
           },
           "default": {
             "description": "An unexpected error response.",
@@ -151,11 +557,139 @@
         ],
         "tags": [
           "Auth"
-        ]
+        ],
+        "security": []
       }
     }
   },
   "definitions": {
+    "CreateTransferResponseAccountSnapshot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "balance": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "type": "string"
+        }
+      },
+      "description": "Updated account snapshots after the atomic transaction\nUse these instead of re-fetching to avoid stale reads."
+    },
+    "GoBankUpdateAccountBody": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "type": "number",
+          "format": "double",
+          "example": 500.00,
+          "description": "New balance in major currency unit (e.g. dollars). Must be \u003e= 0."
+        }
+      }
+    },
+    "pbAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unique account ID."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Username of the account owner."
+        },
+        "balance": {
+          "type": "number",
+          "format": "double",
+          "example": 1050.75,
+          "description": "Current balance in major currency unit (e.g. dollars, not cents)."
+        },
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "ISO 4217 currency code."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the account was created."
+        }
+      }
+    },
+    "pbCreateAccountRequest": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "ISO 4217 currency code. Supported values: USD, EUR, EGP. One account per currency per user."
+        }
+      }
+    },
+    "pbCreateAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/pbAccount"
+        }
+      }
+    },
+    "pbCreateTransferRequest": {
+      "type": "object",
+      "properties": {
+        "fromAccountId": {
+          "type": "string",
+          "format": "int64",
+          "description": "ID of the account to debit. Must belong to the authenticated user.",
+          "minimum": 1
+        },
+        "toAccountId": {
+          "type": "string",
+          "format": "int64",
+          "description": "ID of the account to credit. Can belong to any user.",
+          "minimum": 1
+        },
+        "amount": {
+          "type": "number",
+          "format": "double",
+          "example": 10.50,
+          "description": "Amount to transfer in major currency unit (e.g. dollars). Must be \u003e 0."
+        },
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "Currency of the transfer. Both accounts must hold this currency."
+        }
+      }
+    },
+    "pbCreateTransferResponse": {
+      "type": "object",
+      "properties": {
+        "transfer": {
+          "$ref": "#/definitions/pbTransferRecord"
+        },
+        "fromEntry": {
+          "$ref": "#/definitions/pbTransferEntry"
+        },
+        "toEntry": {
+          "$ref": "#/definitions/pbTransferEntry"
+        },
+        "fromAccount": {
+          "$ref": "#/definitions/CreateTransferResponseAccountSnapshot"
+        },
+        "toAccount": {
+          "$ref": "#/definitions/CreateTransferResponseAccountSnapshot"
+        }
+      }
+    },
     "pbCreateUserRequest": {
       "type": "object",
       "properties": {
@@ -198,6 +732,36 @@
         "user": {
           "$ref": "#/definitions/pbUser",
           "description": "The newly created user (password excluded)."
+        }
+      }
+    },
+    "pbDeleteAccountResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "example": "deleted",
+          "description": "Confirmation message."
+        }
+      }
+    },
+    "pbGetAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/pbAccount"
+        }
+      }
+    },
+    "pbListAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbAccount"
+          }
         }
       }
     },
@@ -246,6 +810,85 @@
         "user": {
           "$ref": "#/definitions/pbUser",
           "description": "Authenticated user's public profile. Password is never returned."
+        }
+      }
+    },
+    "pbRenewAccessTokenRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string",
+          "description": "Valid, non-expired refresh token obtained from the login response."
+        }
+      }
+    },
+    "pbRenewAccessTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string",
+          "description": "New short-lived PASETO access token. Use as: Authorization: Bearer \u003ctoken\u003e"
+        },
+        "accessTokenExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the new access token expires."
+        }
+      }
+    },
+    "pbTransferEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "accountId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double",
+          "description": "Amount in major currency unit. Negative for debit entries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "pbTransferRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "fromAccountId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "toAccountId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double",
+          "description": "Transferred amount in major currency unit. Always positive."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "pbUpdateAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/pbAccount"
         }
       }
     },
@@ -316,5 +959,10 @@
       "name": "Authorization",
       "in": "header"
     }
-  }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
 }
