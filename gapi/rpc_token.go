@@ -6,21 +6,26 @@ import (
 	"time"
 
 	"github.com/a7medalyapany/GoBank.git/pb"
+	"github.com/a7medalyapany/GoBank.git/val"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessTokenRequest) (*pb.RenewAccessTokenResponse, error) {
+	if violations := validateRenewAccessTokenRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	refreshPayload, err := server.tokenMaker.VerifyToken(req.GetRefreshToken())
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid refresh token: %v", err)
 	}
 
-	refreshTokenID := pgtype.UUID{Bytes: refreshPayload.ID, Valid: true}
-	session, err := server.store.GetSession(ctx, refreshTokenID)
+	session, err := server.store.GetSession(ctx, pgtype.UUID{Bytes: refreshPayload.ID, Valid: true})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "session not found")
@@ -31,23 +36,17 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 	if session.IsBlocked {
 		return nil, status.Errorf(codes.Unauthenticated, "session is blocked")
 	}
-
 	if session.Username != refreshPayload.Username {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid session user")
 	}
-
 	if session.RefreshToken != req.GetRefreshToken() {
 		return nil, status.Errorf(codes.Unauthenticated, "mismatched session token")
 	}
-
 	if time.Now().After(session.ExpiresAt.Time) {
 		return nil, status.Errorf(codes.Unauthenticated, "session expired")
 	}
 
-	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
-		refreshPayload.Username,
-		server.config.ACCESS_TOKEN_DURATION,
-	)
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(refreshPayload.Username, server.config.ACCESS_TOKEN_DURATION)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create access token: %v", err)
 	}
@@ -56,4 +55,11 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		AccessToken:          accessToken,
 		AccessTokenExpiresAt: timestamppb.New(accessPayload.ExpiredAt),
 	}, nil
+}
+
+func validateRenewAccessTokenRequest(req *pb.RenewAccessTokenRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateString(req.GetRefreshToken(), 1, 512); err != nil {
+		violations = append(violations, fieldViolation("refresh_token", errors.New("must not be empty")))
+	}
+	return
 }
