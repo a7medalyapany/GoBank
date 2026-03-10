@@ -27,65 +27,163 @@ var File_service_go_bank_proto protoreflect.FileDescriptor
 const file_service_go_bank_proto_rawDesc = "" +
 	"\n" +
 	"\x15service_go_bank.proto\x12\x02pb\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\n" +
-	"user.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto2\xb6\x05\n" +
-	"\x06GoBank\x12\x8e\x02\n" +
+	"user.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x0frpc_token.proto\x1a\x11rpc_account.proto\x1a\x12rpc_transfer.proto2\xf6\x1a\n" +
+	"\x06GoBank\x12\xba\x02\n" +
 	"\n" +
-	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\xd0\x01\x92A\xb8\x01\n" +
-	"\x04Auth\x12\x13Register a new user\x1a>Creates a new user account. Username and email must be unique.*\n" +
+	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\xfc\x01\x92A\xe4\x01\n" +
+	"\x04Auth\x12\x13Register a new user\x1ahCreates a new user account. Username and email must be unique. Password is bcrypt-hashed before storage.*\n" +
 	"CreateUserJ#\n" +
 	"\x03200\x12\x1c\n" +
 	"\x1aUser created successfully.J*\n" +
 	"\x03403\x12#\n" +
-	"!Username or email already exists.\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/users\x12\x9a\x03\n" +
-	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\xdf\x02\x92A\xc2\x02\n" +
-	"\x04Auth\x12\x17Login and obtain tokens\x1a\x98\x01Authenticates credentials and returns a PASETO access token and a refresh token. Store the refresh token securely — it is used to renew access tokens.*\tLoginUserJE\n" +
-	"\x03200\x12>\n" +
-	"<Authentication successful. Returns token pair and user info.J\x1a\n" +
+	"!Username or email already exists.b\x00\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/users\x12\xb1\x02\n" +
+	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\xf6\x01\x92A\xd9\x01\n" +
+	"\x04Auth\x12\x17Login and obtain tokens\x1aPAuthenticates credentials and returns a PASETO access token and a refresh token.*\tLoginUserJ#\n" +
+	"\x03200\x12\x1c\n" +
+	"\x1aAuthentication successful.J\x1a\n" +
 	"\x03401\x12\x13\n" +
 	"\x11Invalid password.J\x18\n" +
 	"\x03404\x12\x11\n" +
-	"\x0fUser not found.\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/auth/loginB\x83\b\x92A\xd7\a\x12\x81\x03\n" +
+	"\x0fUser not found.b\x00\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/auth/login\x12\xba\x03\n" +
+	"\x10RenewAccessToken\x12\x1b.pb.RenewAccessTokenRequest\x1a\x1c.pb.RenewAccessTokenResponse\"\xea\x02\x92A\xc6\x02\n" +
+	"\x04Auth\x12\x12Renew access token\x1a\x97\x01Issues a new short-lived access token using a valid refresh token. Validated against the session store — blocked or mismatched sessions are rejected.*\x10RenewAccessTokenJ!\n" +
+	"\x03200\x12\x1a\n" +
+	"\x18New access token issued.J<\n" +
+	"\x03401\x125\n" +
+	"3Refresh token invalid, expired, or session blocked.J\x1b\n" +
+	"\x03404\x12\x14\n" +
+	"\x12Session not found.b\x00\x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/auth/renew_access\x12\xed\x02\n" +
+	"\rCreateAccount\x12\x18.pb.CreateAccountRequest\x1a\x19.pb.CreateAccountResponse\"\xa6\x02\x92A\x8b\x02\n" +
+	"\bAccounts\x12\x11Create an account\x1aoCreates a new currency account for the authenticated user. Each user may hold at most one account per currency.*\rCreateAccountJ&\n" +
+	"\x03200\x12\x1f\n" +
+	"\x1dAccount created successfully.J2\n" +
+	"\x03403\x12+\n" +
+	")Account for this currency already exists.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/accounts\x12\xdf\x02\n" +
+	"\n" +
+	"GetAccount\x12\x15.pb.GetAccountRequest\x1a\x16.pb.GetAccountResponse\"\xa1\x02\x92A\x84\x02\n" +
+	"\bAccounts\x12\x0eGet an account\x1aTRetrieves a single account by ID. The account must belong to the authenticated user.*\n" +
+	"GetAccountJ(\n" +
+	"\x03200\x12!\n" +
+	"\x1fAccount retrieved successfully.J-\n" +
+	"\x03403\x12&\n" +
+	"$Account belongs to a different user.J\x1b\n" +
+	"\x03404\x12\x14\n" +
+	"\x12Account not found.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/accounts/{id}\x12\x86\x02\n" +
+	"\fListAccounts\x12\x17.pb.ListAccountsRequest\x1a\x18.pb.ListAccountsResponse\"\xc2\x01\x92A\xaa\x01\n" +
+	"\bAccounts\x12\rList accounts\x1aIReturns a paginated list of all accounts owned by the authenticated user.*\fListAccountsJ$\n" +
+	"\x03200\x12\x1d\n" +
+	"\x1bPaginated list of accounts.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/accounts\x12\x88\x03\n" +
+	"\rUpdateAccount\x12\x18.pb.UpdateAccountRequest\x1a\x19.pb.UpdateAccountResponse\"\xc1\x02\x92A\xa1\x02\n" +
+	"\bAccounts\x12\x16Update account balance\x1ahSets the balance of an account. The account must belong to the authenticated user. Balance must be >= 0.*\rUpdateAccountJ&\n" +
+	"\x03200\x12\x1f\n" +
+	"\x1dAccount updated successfully.J-\n" +
+	"\x03403\x12&\n" +
+	"$Account belongs to a different user.J\x1b\n" +
+	"\x03404\x12\x14\n" +
+	"\x12Account not found.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/accounts/{id}\x12\xdd\x02\n" +
+	"\rDeleteAccount\x12\x18.pb.DeleteAccountRequest\x1a\x19.pb.DeleteAccountResponse\"\x96\x02\x92A\xf9\x01\n" +
+	"\bAccounts\x12\x11Delete an account\x1aRPermanently deletes an account. The account must belong to the authenticated user.*\rDeleteAccountJ\x19\n" +
+	"\x03200\x12\x12\n" +
+	"\x10Account deleted.J-\n" +
+	"\x03403\x12&\n" +
+	"$Account belongs to a different user.J\x1b\n" +
+	"\x03404\x12\x14\n" +
+	"\x12Account not found.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x13*\x11/v1/accounts/{id}\x12\xf7\x04\n" +
+	"\x0eCreateTransfer\x12\x19.pb.CreateTransferRequest\x1a\x1a.pb.CreateTransferResponse\"\xad\x04\x92A\x91\x04\n" +
+	"\tTransfers\x12\x11Create a transfer\x1a\xc3\x01Atomically transfers funds between two accounts. The source account must belong to the authenticated user. Both accounts must hold the specified currency. Uses deadlock-safe transaction ordering.*\x0eCreateTransferJ]\n" +
+	"\x03200\x12V\n" +
+	"TTransfer completed. Returns transfer record, entries, and updated account snapshots.J3\n" +
+	"\x03400\x12,\n" +
+	"*Insufficient balance or currency mismatch.JB\n" +
+	"\x03401\x12;\n" +
+	"9Source account does not belong to the authenticated user.J1\n" +
+	"\x03404\x12*\n" +
+	"(Source or destination account not found.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/v1/transfersB\xff\x06\x92A\xd3\x06\x12\x82\x03\n" +
 	"\n" +
 	"GoBank API\x12\xeb\x01A production-grade banking API built with Go, gRPC, and gRPC-Gateway.\n" +
 	"\n" +
-	"Supports user registration, authentication with access/refresh tokens (PASETO), multi-currency accounts, and atomic money transfers with deadlock-safe transactions.\"R\n" +
-	"\x0eAhmed Alyapany\x12'https://github.com/a7medalyapany/GoBank\x1a\x17a7medalyapany@gmail.com**\n" +
-	"\x03MIT\x12#https://opensource.org/licenses/MIT2\x051.0.0\x1a\x0elocalhost:8080\"\x01/*\x02\x01\x022\x10application/json:\x10application/jsonRY\n" +
-	"\x03400\x12R\n" +
-	"9Bad Request — invalid input or missing required fields.\x12\x15\n" +
-	"\x13\x1a\x11.pb.ErrorResponseRQ\n" +
-	"\x03401\x12J\n" +
-	"1Unauthorized — missing or invalid Bearer token.\x12\x15\n" +
-	"\x13\x1a\x11.pb.ErrorResponseRd\n" +
-	"\x03403\x12]\n" +
-	"DForbidden — authenticated but not allowed to access this resource.\x12\x15\n" +
-	"\x13\x1a\x11.pb.ErrorResponseRT\n" +
-	"\x03404\x12M\n" +
-	"4Not Found — the requested resource does not exist.\x12\x15\n" +
-	"\x13\x1a\x11.pb.ErrorResponseRZ\n" +
-	"\x03500\x12S\n" +
-	":Internal Server Error — something went wrong on our end.\x12\x15\n" +
-	"\x13\x1a\x11.pb.ErrorResponseZP\n" +
+	"Supports user registration, authentication with access/refresh tokens (PASETO), multi-currency accounts, and atomic money transfers with deadlock-safe transactions.\"S\n" +
+	"\x0eAhmed Alyapany\x12'https://github.com/a7medalyapany/GoBank\x1a\x18ahmedalyapany1@gmail.com**\n" +
+	"\x03MIT\x12#https://opensource.org/licenses/MIT2\x051.0.0\x1a\x0elocalhost:8080\"\x01/*\x02\x01\x022\x10application/json:\x10application/jsonRB\n" +
+	"\x03400\x12;\n" +
+	"9Bad Request — invalid input or missing required fields.R:\n" +
+	"\x03401\x123\n" +
+	"1Unauthorized — missing or invalid Bearer token.RM\n" +
+	"\x03403\x12F\n" +
+	"DForbidden — authenticated but not allowed to access this resource.R=\n" +
+	"\x03404\x126\n" +
+	"4Not Found — the requested resource does not exist.R\x1f\n" +
+	"\x03500\x12\x18\n" +
+	"\x16Internal Server Error.ZP\n" +
 	"N\n" +
 	"\n" +
-	"BearerAuth\x12@\b\x02\x12+Enter: **Bearer &lt;your_access_token&gt;**\x1a\rAuthorization \x02Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
+	"BearerAuth\x12@\b\x02\x12+Enter: **Bearer &lt;your_access_token&gt;**\x1a\rAuthorization \x02b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var file_service_go_bank_proto_goTypes = []any{
-	(*CreateUserRequest)(nil),  // 0: pb.CreateUserRequest
-	(*LoginUserRequest)(nil),   // 1: pb.LoginUserRequest
-	(*CreateUserResponse)(nil), // 2: pb.CreateUserResponse
-	(*LoginUserResponse)(nil),  // 3: pb.LoginUserResponse
+	(*CreateUserRequest)(nil),        // 0: pb.CreateUserRequest
+	(*LoginUserRequest)(nil),         // 1: pb.LoginUserRequest
+	(*RenewAccessTokenRequest)(nil),  // 2: pb.RenewAccessTokenRequest
+	(*CreateAccountRequest)(nil),     // 3: pb.CreateAccountRequest
+	(*GetAccountRequest)(nil),        // 4: pb.GetAccountRequest
+	(*ListAccountsRequest)(nil),      // 5: pb.ListAccountsRequest
+	(*UpdateAccountRequest)(nil),     // 6: pb.UpdateAccountRequest
+	(*DeleteAccountRequest)(nil),     // 7: pb.DeleteAccountRequest
+	(*CreateTransferRequest)(nil),    // 8: pb.CreateTransferRequest
+	(*CreateUserResponse)(nil),       // 9: pb.CreateUserResponse
+	(*LoginUserResponse)(nil),        // 10: pb.LoginUserResponse
+	(*RenewAccessTokenResponse)(nil), // 11: pb.RenewAccessTokenResponse
+	(*CreateAccountResponse)(nil),    // 12: pb.CreateAccountResponse
+	(*GetAccountResponse)(nil),       // 13: pb.GetAccountResponse
+	(*ListAccountsResponse)(nil),     // 14: pb.ListAccountsResponse
+	(*UpdateAccountResponse)(nil),    // 15: pb.UpdateAccountResponse
+	(*DeleteAccountResponse)(nil),    // 16: pb.DeleteAccountResponse
+	(*CreateTransferResponse)(nil),   // 17: pb.CreateTransferResponse
 }
 var file_service_go_bank_proto_depIdxs = []int32{
-	0, // 0: pb.GoBank.CreateUser:input_type -> pb.CreateUserRequest
-	1, // 1: pb.GoBank.LoginUser:input_type -> pb.LoginUserRequest
-	2, // 2: pb.GoBank.CreateUser:output_type -> pb.CreateUserResponse
-	3, // 3: pb.GoBank.LoginUser:output_type -> pb.LoginUserResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: pb.GoBank.CreateUser:input_type -> pb.CreateUserRequest
+	1,  // 1: pb.GoBank.LoginUser:input_type -> pb.LoginUserRequest
+	2,  // 2: pb.GoBank.RenewAccessToken:input_type -> pb.RenewAccessTokenRequest
+	3,  // 3: pb.GoBank.CreateAccount:input_type -> pb.CreateAccountRequest
+	4,  // 4: pb.GoBank.GetAccount:input_type -> pb.GetAccountRequest
+	5,  // 5: pb.GoBank.ListAccounts:input_type -> pb.ListAccountsRequest
+	6,  // 6: pb.GoBank.UpdateAccount:input_type -> pb.UpdateAccountRequest
+	7,  // 7: pb.GoBank.DeleteAccount:input_type -> pb.DeleteAccountRequest
+	8,  // 8: pb.GoBank.CreateTransfer:input_type -> pb.CreateTransferRequest
+	9,  // 9: pb.GoBank.CreateUser:output_type -> pb.CreateUserResponse
+	10, // 10: pb.GoBank.LoginUser:output_type -> pb.LoginUserResponse
+	11, // 11: pb.GoBank.RenewAccessToken:output_type -> pb.RenewAccessTokenResponse
+	12, // 12: pb.GoBank.CreateAccount:output_type -> pb.CreateAccountResponse
+	13, // 13: pb.GoBank.GetAccount:output_type -> pb.GetAccountResponse
+	14, // 14: pb.GoBank.ListAccounts:output_type -> pb.ListAccountsResponse
+	15, // 15: pb.GoBank.UpdateAccount:output_type -> pb.UpdateAccountResponse
+	16, // 16: pb.GoBank.DeleteAccount:output_type -> pb.DeleteAccountResponse
+	17, // 17: pb.GoBank.CreateTransfer:output_type -> pb.CreateTransferResponse
+	9,  // [9:18] is the sub-list for method output_type
+	0,  // [0:9] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_service_go_bank_proto_init() }
@@ -96,6 +194,9 @@ func file_service_go_bank_proto_init() {
 	file_user_proto_init()
 	file_rpc_create_user_proto_init()
 	file_rpc_login_user_proto_init()
+	file_rpc_token_proto_init()
+	file_rpc_account_proto_init()
+	file_rpc_transfer_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
