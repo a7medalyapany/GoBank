@@ -8,37 +8,38 @@ import (
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/token"
 	"github.com/a7medalyapany/GoBank.git/util"
+	"github.com/a7medalyapany/GoBank.git/val"
 	"github.com/jackc/pgx/v5"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) CreateTransfer(ctx context.Context, req *pb.CreateTransferRequest) (*pb.CreateTransferResponse, error) {
+	if violations := validateCreateTransferRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	authPayload, ok := ctx.Value(authPayloadKey).(*token.Payload)
 	if !ok || authPayload == nil {
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	// Validate source account — also verifies currency match
 	fromAccount, err := server.validateTransferAccount(ctx, req.GetFromAccountId(), req.GetCurrency())
 	if err != nil {
 		return nil, err
 	}
 
-	// Ownership check — only the authenticated user may debit their own account
 	if fromAccount.Owner != authPayload.Username {
 		return nil, status.Errorf(codes.PermissionDenied, "from_account doesn't belong to the authenticated user")
 	}
 
-	// Validate destination account — currency must match
 	if _, err = server.validateTransferAccount(ctx, req.GetToAccountId(), req.GetCurrency()); err != nil {
 		return nil, err
 	}
 
 	amountCents := util.FloatToCents(req.GetAmount())
-
-	// Balance check before attempting the transaction
 	if fromAccount.Balance < amountCents {
 		return nil, status.Errorf(codes.FailedPrecondition,
 			"insufficient balance: account %d has %s but transfer requires %s",
@@ -60,7 +61,26 @@ func (server *Server) CreateTransfer(ctx context.Context, req *pb.CreateTransfer
 	return convertTransferResult(result), nil
 }
 
-// validateTransferAccount fetches an account and confirms its currency matches.
+func validateCreateTransferRequest(req *pb.CreateTransferRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateID(req.GetFromAccountId()); err != nil {
+		violations = append(violations, fieldViolation("from_account_id", err))
+	}
+	if err := val.ValidateID(req.GetToAccountId()); err != nil {
+		violations = append(violations, fieldViolation("to_account_id", err))
+	}
+	if err := val.ValidateAmount(req.GetAmount()); err != nil {
+		violations = append(violations, fieldViolation("amount", err))
+	}
+	if err := val.ValidateCurrency(req.GetCurrency()); err != nil {
+		violations = append(violations, fieldViolation("currency", err))
+	}
+	// Edge case: transferring to yourself isn't caught by DB constraints
+	if req.GetFromAccountId() > 0 && req.GetFromAccountId() == req.GetToAccountId() {
+		violations = append(violations, fieldViolation("to_account_id", errors.New("cannot transfer to the same account")))
+	}
+	return
+}
+
 func (server *Server) validateTransferAccount(ctx context.Context, accountID int64, currency string) (db.Account, error) {
 	account, err := server.store.GetAccount(ctx, accountID)
 	if err != nil {
@@ -80,7 +100,6 @@ func (server *Server) validateTransferAccount(ctx context.Context, accountID int
 	return account, nil
 }
 
-// convertTransferResult maps a db.TransferTxResult to the pb wire type.
 func convertTransferResult(r db.TransferTxResult) *pb.CreateTransferResponse {
 	return &pb.CreateTransferResponse{
 		Transfer: &pb.TransferRecord{
