@@ -28,38 +28,44 @@ var publicRoutes = map[string]bool{
 // It skips validation for routes listed in publicRoutes.
 // On success it injects the *token.Payload into the request context.
 func (server *Server) authInterceptor(
-	ctx context.Context,
-	req any,
-	info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler,
+    ctx context.Context,
+    req any,
+    info *grpc.UnaryServerInfo,
+    handler grpc.UnaryHandler,
 ) (any, error) {
-	// Skip auth for public routes
-	if publicRoutes[info.FullMethod] {
-		return handler(ctx, req)
-	}
+    if publicRoutes[info.FullMethod] {
+        return handler(ctx, req)
+    }
 
-	// Extract metadata from the incoming context
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "missing request metadata")
-	}
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        return nil, status.Errorf(codes.Unauthenticated, "missing request metadata")
+    }
 
-	// gRPC metadata keys are always lowercase
-	values := md.Get("authorization")
+    values := md.Get("authorization")
+
 	if len(values) == 0 {
-		return nil, status.Errorf(codes.Unauthenticated, "authorization header is not provided")
-	}
+        return nil, status.Errorf(codes.Unauthenticated, "authorization header is not provided")
+    }
+    
 
-	fields := strings.Fields(values[0])
-	if len(fields) < 2 {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid authorization header format")
-	}
+   authHeader := values[0]
 
-	if strings.ToLower(fields[0]) != "bearer" {
+	fields := strings.Fields(authHeader)
+
+    if len(fields) < 2 {
+        return nil, status.Errorf(codes.Unauthenticated, "invalid authorization header format")
+    }
+
+	authType := strings.ToLower(fields[0])
+
+	if authType != "bearer" {
 		return nil, status.Errorf(codes.Unauthenticated, "unsupported authorization type: %s", fields[0])
 	}
 
-	payload, err := server.tokenMaker.VerifyToken(fields[1])
+	accessToken := fields[1]
+
+	payload, err := server.tokenMaker.VerifyToken(accessToken)
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid access token: %v", err)
 	}

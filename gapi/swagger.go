@@ -407,6 +407,28 @@ func buildSwaggerUI(meta swaggerMeta) string {
     .swagger-ui .prop-type { color: var(--accent) !important; }
     .swagger-ui .prop-format { color: var(--text-muted) !important; }
 
+    /* ── Arrows: expand/collapse chevrons on opblocks and tag sections ── */
+    .swagger-ui svg.arrow,
+    .swagger-ui .arrow,
+    .swagger-ui .expand-operation svg,
+    .swagger-ui .opblock-summary-control svg,
+    .swagger-ui .opblock-tag-section svg { fill: #ffffff !important; }
+
+    /* Model section toggle (CSS pseudo-element rendered as a dark image) */
+    .swagger-ui .model-toggle::after { filter: invert(1) brightness(2) !important; }
+
+    /* ── Lock icons: both locked and unlocked states, global authorize + per-opblock ── */
+    .swagger-ui .authorization__btn svg,
+    .swagger-ui .authorization__btn svg path,
+    .swagger-ui .authorization__btn svg rect,
+    .swagger-ui .unlocked svg,
+    .swagger-ui .unlocked svg path,
+    .swagger-ui .locked svg,
+    .swagger-ui .locked svg path,
+    .swagger-ui .opblock-summary button.authorization__btn svg,
+    .swagger-ui .opblock-summary button.authorization__btn svg path,
+    .swagger-ui .opblock-summary button.authorization__btn svg rect { fill: #ffffff !important; }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
