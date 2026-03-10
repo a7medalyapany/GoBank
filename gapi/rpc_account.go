@@ -8,15 +8,15 @@ import (
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/token"
 	"github.com/a7medalyapany/GoBank.git/util"
+	"github.com/a7medalyapany/GoBank.git/val"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// convertAccount maps a db.Account to the pb.Account wire type.
-// Balance is converted from cents (int64) → float64 for the response.
 func convertAccount(a db.Account) *pb.Account {
 	return &pb.Account{
 		Id:        a.ID,
@@ -27,8 +27,6 @@ func convertAccount(a db.Account) *pb.Account {
 	}
 }
 
-// authorizeAccount fetches an account and verifies the authenticated user owns it.
-// Returns the account on success, or a gRPC status error on failure.
 func (server *Server) authorizeAccount(ctx context.Context, accountID int64) (db.Account, error) {
 	account, err := server.store.GetAccount(ctx, accountID)
 	if err != nil {
@@ -50,27 +48,28 @@ func (server *Server) authorizeAccount(ctx context.Context, accountID int64) (db
 	return account, nil
 }
 
-// ── CreateAccount ─────────────────────────────────────────────────────────────
-
+// CreateAccount
 func (server *Server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
+	if violations := validateCreateAccountRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	authPayload, ok := ctx.Value(authPayloadKey).(*token.Payload)
 	if !ok || authPayload == nil {
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	arg := db.CreateAccountParams{
+	account, err := server.store.CreateAccount(ctx, db.CreateAccountParams{
 		Owner:    authPayload.Username,
 		Currency: req.GetCurrency(),
 		Balance:  0,
-	}
-
-	account, err := server.store.CreateAccount(ctx, arg)
+	})
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			switch pgErr.Code {
-			case "23503", "23505": // foreign key / unique violation
-				return nil, status.Errorf(codes.AlreadyExists, "account already exists for this currency: %v", err)
+			case "23503", "23505":
+				return nil, status.Errorf(codes.AlreadyExists, "account already exists for this currency")
 			}
 		}
 		return nil, status.Errorf(codes.Internal, "failed to create account: %v", err)
@@ -79,9 +78,19 @@ func (server *Server) CreateAccount(ctx context.Context, req *pb.CreateAccountRe
 	return &pb.CreateAccountResponse{Account: convertAccount(account)}, nil
 }
 
-// ── GetAccount ────────────────────────────────────────────────────────────────
+func validateCreateAccountRequest(req *pb.CreateAccountRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateCurrency(req.GetCurrency()); err != nil {
+		violations = append(violations, fieldViolation("currency", err))
+	}
+	return
+}
 
+// GetAccount
 func (server *Server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.GetAccountResponse, error) {
+	if violations := validateGetAccountRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	account, err := server.authorizeAccount(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -90,21 +99,29 @@ func (server *Server) GetAccount(ctx context.Context, req *pb.GetAccountRequest)
 	return &pb.GetAccountResponse{Account: convertAccount(account)}, nil
 }
 
-// ── ListAccounts ──────────────────────────────────────────────────────────────
+func validateGetAccountRequest(req *pb.GetAccountRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateID(req.GetId()); err != nil {
+		violations = append(violations, fieldViolation("id", err))
+	}
+	return
+}
 
+// ListAccounts
 func (server *Server) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
+	if violations := validateListAccountsRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	authPayload, ok := ctx.Value(authPayloadKey).(*token.Payload)
 	if !ok || authPayload == nil {
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	arg := db.ListAccountsParams{
+	accounts, err := server.store.ListAccounts(ctx, db.ListAccountsParams{
 		Owner:  authPayload.Username,
 		Limit:  req.GetPageSize(),
 		Offset: (req.GetPageId() - 1) * req.GetPageSize(),
-	}
-
-	accounts, err := server.store.ListAccounts(ctx, arg)
+	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list accounts: %v", err)
 	}
@@ -117,20 +134,30 @@ func (server *Server) ListAccounts(ctx context.Context, req *pb.ListAccountsRequ
 	return &pb.ListAccountsResponse{Accounts: pbAccounts}, nil
 }
 
-// ── UpdateAccount ─────────────────────────────────────────────────────────────
+func validateListAccountsRequest(req *pb.ListAccountsRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidatePageID(req.GetPageId()); err != nil {
+		violations = append(violations, fieldViolation("page_id", err))
+	}
+	if err := val.ValidatePageSize(req.GetPageSize()); err != nil {
+		violations = append(violations, fieldViolation("page_size", err))
+	}
+	return
+}
 
+// UpdateAccount
 func (server *Server) UpdateAccount(ctx context.Context, req *pb.UpdateAccountRequest) (*pb.UpdateAccountResponse, error) {
-	// Ownership check first — never mutate before verifying
+	if violations := validateUpdateAccountRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	if _, err := server.authorizeAccount(ctx, req.GetId()); err != nil {
 		return nil, err
 	}
 
-	arg := db.UpdateAccountParams{
+	updated, err := server.store.UpdateAccount(ctx, db.UpdateAccountParams{
 		ID:      req.GetId(),
 		Balance: util.FloatToCents(req.GetBalance()),
-	}
-
-	updated, err := server.store.UpdateAccount(ctx, arg)
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "account not found")
@@ -141,10 +168,22 @@ func (server *Server) UpdateAccount(ctx context.Context, req *pb.UpdateAccountRe
 	return &pb.UpdateAccountResponse{Account: convertAccount(updated)}, nil
 }
 
-// ── DeleteAccount ─────────────────────────────────────────────────────────────
+func validateUpdateAccountRequest(req *pb.UpdateAccountRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateID(req.GetId()); err != nil {
+		violations = append(violations, fieldViolation("id", err))
+	}
+	if req.GetBalance() < 0 {
+		violations = append(violations, fieldViolation("balance", errors.New("must be non-negative")))
+	}
+	return
+}
 
+// DeleteAccount
 func (server *Server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
-	// Ownership check first
+	if violations := validateDeleteAccountRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	if _, err := server.authorizeAccount(ctx, req.GetId()); err != nil {
 		return nil, err
 	}
@@ -157,4 +196,11 @@ func (server *Server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRe
 	}
 
 	return &pb.DeleteAccountResponse{Status: "deleted"}, nil
+}
+
+func validateDeleteAccountRequest(req *pb.DeleteAccountRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateID(req.GetId()); err != nil {
+		violations = append(violations, fieldViolation("id", err))
+	}
+	return
 }
