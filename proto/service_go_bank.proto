@@ -7,12 +7,12 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "user.proto";
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
+import "rpc_token.proto";
+import "rpc_account.proto";
+import "rpc_transfer.proto";
 
 option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
-// --- OpenAPI top-level spec metadata ---
-// This is the single source of truth for the API name, version, and description.
-// Update these fields here and run `make proto` — the docs update automatically.
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "GoBank API"
@@ -21,21 +21,19 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     contact: {
       name: "Ahmed Alyapany"
       url: "https://github.com/a7medalyapany/GoBank"
-      email: "a7medalyapany@gmail.com"
+      email: "ahmedalyapany1@gmail.com"
     }
     license: {
       name: "MIT"
       url: "https://opensource.org/licenses/MIT"
     }
   }
-  // Servers block — overridden by runtime but useful for generated clients
   host: "localhost:8080"
   base_path: "/"
   schemes: HTTP
   schemes: HTTPS
   consumes: "application/json"
   produces: "application/json"
-  // Reusable security definition for Bearer tokens
   security_definitions: {
     security: {
       key: "BearerAuth"
@@ -47,108 +45,158 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       }
     }
   }
-  // Default error response shape shared across all endpoints
+  security: { security_requirement: { key: "BearerAuth" value: {} } }
   responses: {
     key: "400"
-    value: {
-      description: "Bad Request — invalid input or missing required fields."
-      schema: { json_schema: { ref: ".pb.ErrorResponse" } }
-    }
+    value: { description: "Bad Request — invalid input or missing required fields." }
   }
   responses: {
     key: "401"
-    value: {
-      description: "Unauthorized — missing or invalid Bearer token."
-      schema: { json_schema: { ref: ".pb.ErrorResponse" } }
-    }
+    value: { description: "Unauthorized — missing or invalid Bearer token." }
   }
   responses: {
     key: "403"
-    value: {
-      description: "Forbidden — authenticated but not allowed to access this resource."
-      schema: { json_schema: { ref: ".pb.ErrorResponse" } }
-    }
+    value: { description: "Forbidden — authenticated but not allowed to access this resource." }
   }
   responses: {
     key: "404"
-    value: {
-      description: "Not Found — the requested resource does not exist."
-      schema: { json_schema: { ref: ".pb.ErrorResponse" } }
-    }
+    value: { description: "Not Found — the requested resource does not exist." }
   }
   responses: {
     key: "500"
-    value: {
-      description: "Internal Server Error — something went wrong on our end."
-      schema: { json_schema: { ref: ".pb.ErrorResponse" } }
-    }
+    value: { description: "Internal Server Error." }
   }
 };
 
 // GoBank provides user management and authentication APIs.
 service GoBank {
 
-  // CreateUser registers a new user account.
-  //
-  // Validates uniqueness of username and email. Password is hashed
-  // with bcrypt before storage — it is never persisted in plain text.
+  // ── Auth (public) ──────────────────────────────────────────────────────────
+
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
-    option (google.api.http) = {
-      post: "/v1/users"
-      body: "*"
-    };
+    option (google.api.http) = { post: "/v1/users" body: "*" };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Register a new user"
-      description: "Creates a new user account. Username and email must be unique."
+      description: "Creates a new user account. Username and email must be unique. Password is bcrypt-hashed before storage."
       tags: ["Auth"]
       operation_id: "CreateUser"
-      responses: {
-        key: "200"
-        value: {
-          description: "User created successfully."
-        }
-      }
-      responses: {
-        key: "403"
-        value: {
-          description: "Username or email already exists."
-        }
-      }
+      security: {}
+      responses: { key: "200" value: { description: "User created successfully." } }
+      responses: { key: "403" value: { description: "Username or email already exists." } }
     };
   }
 
-  // LoginUser authenticates a user and returns a PASETO access + refresh token pair.
-  //
-  // Access tokens are short-lived. Use the refresh token via /v1/auth/renew_access
-  // to obtain a new access token without re-authenticating.
   rpc LoginUser(LoginUserRequest) returns (LoginUserResponse) {
-    option (google.api.http) = {
-      post: "/v1/auth/login"
-      body: "*"
-    };
+    option (google.api.http) = { post: "/v1/auth/login" body: "*" };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Login and obtain tokens"
-      description: "Authenticates credentials and returns a PASETO access token and a refresh token. Store the refresh token securely — it is used to renew access tokens."
+      description: "Authenticates credentials and returns a PASETO access token and a refresh token."
       tags: ["Auth"]
       operation_id: "LoginUser"
-      responses: {
-        key: "200"
-        value: {
-          description: "Authentication successful. Returns token pair and user info."
-        }
-      }
-      responses: {
-        key: "401"
-        value: {
-          description: "Invalid password."
-        }
-      }
-      responses: {
-        key: "404"
-        value: {
-          description: "User not found."
-        }
-      }
+      security: {}
+      responses: { key: "200" value: { description: "Authentication successful." } }
+      responses: { key: "401" value: { description: "Invalid password." } }
+      responses: { key: "404" value: { description: "User not found." } }
+    };
+  }
+
+  rpc RenewAccessToken(RenewAccessTokenRequest) returns (RenewAccessTokenResponse) {
+    option (google.api.http) = { post: "/v1/auth/renew_access" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Renew access token"
+      description: "Issues a new short-lived access token using a valid refresh token. Validated against the session store — blocked or mismatched sessions are rejected."
+      tags: ["Auth"]
+      operation_id: "RenewAccessToken"
+      security: {}
+      responses: { key: "200" value: { description: "New access token issued." } }
+      responses: { key: "401" value: { description: "Refresh token invalid, expired, or session blocked." } }
+      responses: { key: "404" value: { description: "Session not found." } }
+    };
+  }
+
+  // ── Accounts (protected) ───────────────────────────────────────────────────
+
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {
+    option (google.api.http) = { post: "/v1/accounts" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create an account"
+      description: "Creates a new currency account for the authenticated user. Each user may hold at most one account per currency."
+      tags: ["Accounts"]
+      operation_id: "CreateAccount"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Account created successfully." } }
+      responses: { key: "403" value: { description: "Account for this currency already exists." } }
+    };
+  }
+
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse) {
+    option (google.api.http) = { get: "/v1/accounts/{id}" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get an account"
+      description: "Retrieves a single account by ID. The account must belong to the authenticated user."
+      tags: ["Accounts"]
+      operation_id: "GetAccount"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Account retrieved successfully." } }
+      responses: { key: "403" value: { description: "Account belongs to a different user." } }
+      responses: { key: "404" value: { description: "Account not found." } }
+    };
+  }
+
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {
+    option (google.api.http) = { get: "/v1/accounts" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List accounts"
+      description: "Returns a paginated list of all accounts owned by the authenticated user."
+      tags: ["Accounts"]
+      operation_id: "ListAccounts"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Paginated list of accounts." } }
+    };
+  }
+
+  rpc UpdateAccount(UpdateAccountRequest) returns (UpdateAccountResponse) {
+    option (google.api.http) = { put: "/v1/accounts/{id}" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update account balance"
+      description: "Sets the balance of an account. The account must belong to the authenticated user. Balance must be >= 0."
+      tags: ["Accounts"]
+      operation_id: "UpdateAccount"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Account updated successfully." } }
+      responses: { key: "403" value: { description: "Account belongs to a different user." } }
+      responses: { key: "404" value: { description: "Account not found." } }
+    };
+  }
+
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse) {
+    option (google.api.http) = { delete: "/v1/accounts/{id}" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Delete an account"
+      description: "Permanently deletes an account. The account must belong to the authenticated user."
+      tags: ["Accounts"]
+      operation_id: "DeleteAccount"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Account deleted." } }
+      responses: { key: "403" value: { description: "Account belongs to a different user." } }
+      responses: { key: "404" value: { description: "Account not found." } }
+    };
+  }
+
+  // ── Transfers (protected) ──────────────────────────────────────────────────
+
+  rpc CreateTransfer(CreateTransferRequest) returns (CreateTransferResponse) {
+    option (google.api.http) = { post: "/v1/transfers" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create a transfer"
+      description: "Atomically transfers funds between two accounts. The source account must belong to the authenticated user. Both accounts must hold the specified currency. Uses deadlock-safe transaction ordering."
+      tags: ["Transfers"]
+      operation_id: "CreateTransfer"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Transfer completed. Returns transfer record, entries, and updated account snapshots." } }
+      responses: { key: "400" value: { description: "Insufficient balance or currency mismatch." } }
+      responses: { key: "401" value: { description: "Source account does not belong to the authenticated user." } }
+      responses: { key: "404" value: { description: "Source or destination account not found." } }
     };
   }
 }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/a7medalyapany/GoBank.git/pb";
+
+message RenewAccessTokenRequest {
+  string refresh_token = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Valid, non-expired refresh token obtained from the login response."
+  }];
+}
+
+message RenewAccessTokenResponse {
+  string access_token = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "New short-lived PASETO access token. Use as: Authorization: Bearer <token>"
+  }];
+  google.protobuf.Timestamp access_token_expires_at = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "UTC timestamp when the new access token expires."
+  }];
+}
