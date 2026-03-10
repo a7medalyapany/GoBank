@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/a7medalyapany/GoBank.git/pb";
+
+// ─── Shared sub-messages (mirrors TransferTxResult) ──────────────────────────
+
+message TransferEntry {
+  int64  id         = 1;
+  int64  account_id = 2;
+  double amount     = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = { description: "Amount in major currency unit. Negative for debit entries." }];
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message TransferRecord {
+  int64  id              = 1;
+  int64  from_account_id = 2;
+  int64  to_account_id   = 3;
+  double amount          = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = { description: "Transferred amount in major currency unit. Always positive." }];
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// ─── CreateTransfer ───────────────────────────────────────────────────────────
+
+message CreateTransferRequest {
+  int64  from_account_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "ID of the account to debit. Must belong to the authenticated user."
+    minimum: 1
+  }];
+  int64  to_account_id   = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "ID of the account to credit. Can belong to any user."
+    minimum: 1
+  }];
+  double amount          = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Amount to transfer in major currency unit (e.g. dollars). Must be > 0."
+    minimum: 0
+    example: "10.50"
+  }];
+  string currency        = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Currency of the transfer. Both accounts must hold this currency."
+    example: '"USD"'
+  }];
+}
+
+message CreateTransferResponse {
+  TransferRecord transfer     = 1;
+  TransferEntry  from_entry   = 2;
+  TransferEntry  to_entry     = 3;
+  // Updated account snapshots after the atomic transaction
+  // Use these instead of re-fetching to avoid stale reads.
+  message AccountSnapshot {
+    int64  id       = 1;
+    string owner    = 2;
+    double balance  = 3;
+    string currency = 4;
+  }
+  AccountSnapshot from_account = 4;
+  AccountSnapshot to_account   = 5;
+}
