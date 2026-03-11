@@ -559,6 +559,67 @@
           "Auth"
         ],
         "security": []
+      },
+      "patch": {
+        "summary": "Update current user",
+        "description": "Updates the authenticated user's profile. All fields are optional — only provided fields are updated. Password is bcrypt-hashed before storage.",
+        "operationId": "UpdateUser",
+        "responses": {
+          "200": {
+            "description": "User updated successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateUserResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters — validation failed.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Not authorized to update this user.",
+            "schema": {}
+          },
+          "404": {
+            "description": "User not found.",
+            "schema": {}
+          },
+          "409": {
+            "description": "Email already in use by another account.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUpdateUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -889,6 +950,51 @@
       "properties": {
         "account": {
           "$ref": "#/definitions/pbAccount"
+        }
+      }
+    },
+    "pbUpdateUserRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "example": "john.doe.abc1",
+          "description": "Unique alphanumeric username. No spaces or special characters.",
+          "title": "Unique username. Alphanumeric only, no spaces.\nexample: \"john.doe.abc1\"",
+          "maxLength": 50,
+          "minLength": 3,
+          "pattern": "^[a-zA-Z0-9.]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "example": "John Doe",
+          "description": "Full display name of the user.",
+          "title": "Full display name of the user.\nexample: \"John Doe\"",
+          "maxLength": 100,
+          "minLength": 2
+        },
+        "email": {
+          "type": "string",
+          "example": "john@example.com",
+          "description": "Valid email address. Must be unique across all accounts.",
+          "title": "Valid email address. Must be unique across all accounts.\nexample: \"john@example.com\""
+        },
+        "password": {
+          "type": "string",
+          "format": "password",
+          "example": "supersecret123",
+          "description": "Account password. Minimum 8 characters. Stored as bcrypt hash.",
+          "title": "Password for the account. Minimum 8 characters.\nStored as a bcrypt hash — never in plain text.\nexample: \"supersecret123\"",
+          "minLength": 8
+        }
+      }
+    },
+    "pbUpdateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/pbUser",
+          "description": "The updated user (password excluded)."
         }
       }
     },
