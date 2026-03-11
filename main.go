@@ -13,9 +13,11 @@ import (
 	"github.com/a7medalyapany/GoBank.git/api"
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
 	"github.com/a7medalyapany/GoBank.git/gapi"
+	"github.com/a7medalyapany/GoBank.git/logger"
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -28,9 +30,21 @@ func main() {
 		panic(fmt.Sprintf("cannot load config: %v", err))
 	}
 
+	logCfg := logger.DefaultConfig("go-bank", "1.0.0", config.ENVIRONMENT)
+	if err := logger.InitGlobal(logCfg); err != nil {
+		log.Fatalf("cannot init logger: %v", err)
+	}
+	defer logger.G().Sync() // nolint: errcheck
+
+	l := logger.G()
+	l.Info("starting GoBank",
+		zap.String("port", config.PORT),
+		zap.String("grpc_port", config.GRPC_SERVER_PORT),
+	)
+
 	conn, err := pgxpool.New(context.Background(), config.DB_URL)
 	if err != nil {
-		panic(fmt.Sprintf("cannot connect to db: %v", err))
+		l.Fatal("cannot connect to db", zap.Error(err))
 	}
 	defer conn.Close()
 
@@ -40,56 +54,69 @@ func main() {
 	runGRPCServer(store, config)
 }
 
-// runGinServer starts the Gin HTTP REST server.
-// Uncomment in main() if you want to serve Gin alongside gRPC.
+// runGinServer starts the Gin HTTP REST server (kept for reference).
 func runGinServer(store *db.Store, config util.Config) {
 	server, err := api.NewServer(store, config)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create Gin server: %v", err))
+		logger.G().Fatal("cannot create Gin server", zap.Error(err))
 	}
 
 	address := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.PORT)
 	if err := server.Start(address); err != nil {
-		panic(fmt.Sprintf("cannot start Gin server: %v", err))
+		logger.G().Fatal("cannot start Gin server", zap.Error(err))
 	}
 }
 
-// runGRPCServer starts the gRPC server with the auth interceptor wired in.
+// runGRPCServer starts the gRPC server with the auth + logging interceptors.
 func runGRPCServer(store *db.Store, config util.Config) {
+	l := logger.G()
+
 	server, err := gapi.NewServer(store, config)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create gRPC server: %v", err))
+		l.Fatal("cannot create gRPC server", zap.Error(err))
 	}
 
-	// GRPCServer() returns a *grpc.Server pre-configured with the auth interceptor
-	grpcServer := server.GRPCServer()
+	grpcOpts := logger.GRPCLogOptions{
+		Logger: l,
+		SkipMethods: map[string]bool{
+			"/grpc.health.v1.Health/Check": true,
+		},
+		// LogPayloads: true, // Enable only in development
+	}
+
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			logger.UnaryServerInterceptor(grpcOpts),
+			server.AuthInterceptor(),
+		),
+		grpc.ChainStreamInterceptor(
+			logger.StreamServerInterceptor(grpcOpts),
+		),
+	)
+
 	pb.RegisterGoBankServer(grpcServer, server)
 	reflection.Register(grpcServer)
 
 	address := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.GRPC_SERVER_PORT)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create gRPC listener: %v", err))
+		l.Fatal("cannot create gRPC listener", zap.Error(err))
 	}
 
-	log.Printf("gRPC server listening at %s", listener.Addr().String())
+	l.Info("gRPC server listening", zap.String("addr", listener.Addr().String()))
 
 	if err := grpcServer.Serve(listener); err != nil {
-		panic(fmt.Sprintf("cannot serve gRPC: %v", err))
+		l.Fatal("gRPC server stopped", zap.Error(err))
 	}
 }
 
-// runGatewayServer starts the gRPC-Gateway HTTP server.
-//
-// Routes:
-//
-//	/swagger/          → custom branded Swagger UI
-//	/swagger/doc.json  → raw embedded OpenAPI spec
-//	/*                 → gRPC-Gateway (REST → gRPC translation)
+// runGatewayServer starts the gRPC-Gateway HTTP server with the HTTP logger middleware.
 func runGatewayServer(store *db.Store, config util.Config) {
+	l := logger.G()
+
 	_, err := gapi.NewServer(store, config)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create gateway server: %v", err))
+		l.Fatal("cannot create gateway server", zap.Error(err))
 	}
 
 	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
@@ -104,8 +131,11 @@ func runGatewayServer(store *db.Store, config util.Config) {
 	grpcMux := runtime.NewServeMux(
 		jsonOption,
 		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
-			if strings.ToLower(key) == "authorization" {
-				return "authorization", true
+			lower := strings.ToLower(key)
+			// Pass through auth, correlation, and trace headers.
+			switch lower {
+			case "authorization", "x-request-id", "x-trace-id", "x-span-id":
+				return lower, true
 			}
 			return runtime.DefaultHeaderMatcher(key)
 		}),
@@ -121,24 +151,43 @@ func runGatewayServer(store *db.Store, config util.Config) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	})
 	if err != nil {
-		panic(fmt.Sprintf("cannot register gateway handler: %v", err))
+		l.Fatal("cannot register gateway handler", zap.Error(err))
 	}
+
+	httpOpts := logger.HTTPLogOptions{
+		Logger: l,
+		SkipPaths: []string{
+			"/healthz",
+			"/readyz",
+		},
+		ObservabilityPaths: []string{
+			"/metrics",
+		},
+		SkipPathPrefixes: []string{
+			"/swagger/", // already served statically, no need to log each asset
+		},
+		// LogRequestBody: true, // dev only
+	}
+
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/swagger/", gapi.SwaggerHandler)
 	mux.Handle("/", grpcMux)
 
+	loggedMux := logger.HTTPMiddleware(httpOpts)(mux)
+
 	httpAddress := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.PORT)
 	listener, err := net.Listen("tcp", httpAddress)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create HTTP listener: %v", err))
+		l.Fatal("cannot create HTTP listener", zap.Error(err))
 	}
 
-	log.Printf("HTTP gateway listening at    http://%s", httpAddress)
-	log.Printf("Swagger UI available at      http://%s/swagger/", httpAddress)
-	log.Printf("OpenAPI spec available at    http://%s/swagger/doc.json", httpAddress)
+	l.Info("HTTP gateway listening",
+		zap.String("addr", fmt.Sprintf("http://%s", httpAddress)),
+		zap.String("swagger", fmt.Sprintf("http://%s/swagger/", httpAddress)),
+	)
 
-	if err = http.Serve(listener, mux); err != nil {
-		panic(fmt.Sprintf("cannot serve HTTP gateway: %v", err))
+	if err = http.Serve(listener, loggedMux); err != nil {
+		l.Fatal("HTTP gateway stopped", zap.Error(err))
 	}
 }
