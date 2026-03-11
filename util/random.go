@@ -28,9 +28,9 @@ func RandomOwner() string {
 	last := lastNames[rand.Intn(len(lastNames))]
 	number := rand.Intn(1000)
 
-	// e.g. ahmed.alyapany69
+	// e.g. ahmed_alyapany69
 	return strings.ToLower(
-		first + "." + last + "." + RandomString(3) + string(rune('0'+number%10)),
+		first + "_" + last + "_" + RandomString(3) + string(rune('0'+number%10)),
 	)
 }
 

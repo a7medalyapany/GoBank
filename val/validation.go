@@ -95,3 +95,10 @@ func ValidateAmount(amount float64) error {
 	}
 	return nil
 }
+
+func ValidateOptionalString(value *string, validateFn func(string) error) error {
+	if value == nil {
+		return nil
+	}
+	return validateFn(*value)
+}

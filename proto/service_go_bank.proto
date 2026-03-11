@@ -10,6 +10,7 @@ import "rpc_login_user.proto";
 import "rpc_token.proto";
 import "rpc_account.proto";
 import "rpc_transfer.proto";
+import "rpc_update_user.proto";
 
 option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
@@ -115,6 +116,24 @@ service GoBank {
   }
 
   // ── Accounts (protected) ───────────────────────────────────────────────────
+
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = { patch: "/v1/users" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update current user"
+      description: "Updates the authenticated user's profile. All fields are optional — only provided fields are updated. Password is bcrypt-hashed before storage."
+      tags: ["Users"]
+      operation_id: "UpdateUser"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "User updated successfully." } }
+      responses: { key: "400" value: { description: "Invalid request parameters — validation failed." } }
+      responses: { key: "401" value: { description: "Missing or invalid Bearer token." } }
+      responses: { key: "403" value: { description: "Not authorized to update this user." } }
+      responses: { key: "404" value: { description: "User not found." } }
+      responses: { key: "409" value: { description: "Email already in use by another account." } }
+      responses: { key: "500" value: { description: "Internal server error." } }
+    };
+  }
 
   rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {
     option (google.api.http) = { post: "/v1/accounts" body: "*" };

@@ -54,7 +54,8 @@ server:
 #
 # After running this command the spec is embedded into the binary via
 # //go:embed in gapi/swagger.go — no separate file copy needed in prod.
-# protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative --grpc-gateway_out=pb --grpc-gateway_opt=paths=source_relative --openapiv2_out=doc/swagger --openapiv2_opt=allow_merge=true --openapiv2_opt=merge_file_name=go_bank --openapiv2_opt=output_format=json proto/*.proto cp doc/swagger/go_bank.swagger.json gapi/go_bank.swagger.json
+# protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative --grpc-gateway_out=pb --grpc-gateway_opt=paths=source_relative --openapiv2_out=doc/swagger --openapiv2_opt=allow_merge=true --openapiv2_opt=merge_file_name=go_bank --openapiv2_opt=output_format=json proto/*.proto
+# cp doc/swagger/go_bank.swagger.json gapi/go_bank.swagger.json
 # ─────────────────────────────────────────────────────────────
 proto:
 	rm -f pb/*.go
