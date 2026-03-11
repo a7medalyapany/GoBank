@@ -9,14 +9,15 @@ import (
 // Config holds all configuration of the application
 // the values of Config are loaded from the environment variables or a config file
 type Config struct {
-	PORT           		string 			`mapstructure:"PORT"`
-	DB_URL				string 			`mapstructure:"DB_URL"`
-	TESTING_DB_URL		string 			`mapstructure:"TESTING_DB_URL"`
-	SERVER_ADDRESS 		string 			`mapstructure:"SERVER_ADDRESS"`
-	TOKEN_SYMMETRIC_KEY	string 			`mapstructure:"TOKEN_SYMMETRIC_KEY"`
-	ACCESS_TOKEN_DURATION time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
-    REFRESH_TOKEN_DURATION time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
-    GRPC_SERVER_PORT		string 			`mapstructure:"GRPC_SERVER_PORT"`
+	PORT                   string        `mapstructure:"PORT"`
+	DB_URL                 string        `mapstructure:"DB_URL"`
+	TESTING_DB_URL         string        `mapstructure:"TESTING_DB_URL"`
+	SERVER_ADDRESS         string        `mapstructure:"SERVER_ADDRESS"`
+	TOKEN_SYMMETRIC_KEY    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	ACCESS_TOKEN_DURATION  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	REFRESH_TOKEN_DURATION time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	GRPC_SERVER_PORT       string        `mapstructure:"GRPC_SERVER_PORT"`
+	ENVIRONMENT            string        `mapstructure:"ENVIRONMENT"`
 }
 
 
@@ -26,6 +27,9 @@ func LoadConfig(path string) (config Config, err error) {
     viper.SetConfigName("app")
     viper.SetConfigType("env")
     viper.AutomaticEnv()
+
+    // Set a safe default for ENVIRONMENT.
+	viper.SetDefault("ENVIRONMENT", "production")
 
     // Only read file if it exists — in production, env vars are enough
     if err = viper.ReadInConfig(); err != nil {
