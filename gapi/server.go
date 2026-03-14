@@ -7,6 +7,7 @@ import (
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/token"
 	"github.com/a7medalyapany/GoBank.git/util"
+	"github.com/a7medalyapany/GoBank.git/worker"
 	"google.golang.org/grpc"
 )
 
@@ -16,10 +17,11 @@ type Server struct {
 	store      *db.Store
 	config     util.Config
 	tokenMaker token.Maker
+	taskDistributor worker.TaskDistributor
 }
 
 // NewServer creates a new gRPC Server instance with a Paseto token maker.
-func NewServer(store *db.Store, config util.Config) (*Server, error) {
+func NewServer(store *db.Store, config util.Config, taskDistributor worker.TaskDistributor) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(config.TOKEN_SYMMETRIC_KEY)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
@@ -29,6 +31,7 @@ func NewServer(store *db.Store, config util.Config) (*Server, error) {
 		store:      store,
 		config:     config,
 		tokenMaker: tokenMaker,
+		taskDistributor: taskDistributor,
 	}, nil
 }
 
