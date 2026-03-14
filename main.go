@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 
 	"github.com/a7medalyapany/GoBank.git/api"
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
@@ -16,6 +17,7 @@ import (
 	"github.com/a7medalyapany/GoBank.git/logger"
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/util"
+	"github.com/a7medalyapany/GoBank.git/worker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -50,8 +52,29 @@ func main() {
 
 	store := db.NewStore(conn)
 
-	go runGatewayServer(store, config)
-	runGRPCServer(store, config)
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.REDIS_ADDRESS,
+	}
+
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+	
+	runGRPCServer(store, config, taskDistributor)
+	// runGinServer(store, config) // kept for reference
+
+	go runTaskProcessor(redisOpt, store)
+	go runGatewayServer(config)
+}
+
+
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store) {
+	l := logger.G()
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+
+	l.Info("start task processor")
+
+	if err := taskProcessor.Start(); err != nil {
+		l.Fatal("cannot start task processor", zap.Error(err))
+	}
 }
 
 // runGinServer starts the Gin HTTP REST server (kept for reference).
@@ -68,10 +91,10 @@ func runGinServer(store *db.Store, config util.Config) {
 }
 
 // runGRPCServer starts the gRPC server with the auth + logging interceptors.
-func runGRPCServer(store *db.Store, config util.Config) {
+func runGRPCServer(store *db.Store, config util.Config, taskDistributor worker.TaskDistributor) {
 	l := logger.G()
 
-	server, err := gapi.NewServer(store, config)
+	server, err := gapi.NewServer(store, config, taskDistributor)
 	if err != nil {
 		l.Fatal("cannot create gRPC server", zap.Error(err))
 	}
@@ -111,13 +134,8 @@ func runGRPCServer(store *db.Store, config util.Config) {
 }
 
 // runGatewayServer starts the gRPC-Gateway HTTP server with the HTTP logger middleware.
-func runGatewayServer(store *db.Store, config util.Config) {
+func runGatewayServer(config util.Config) {
 	l := logger.G()
-
-	_, err := gapi.NewServer(store, config)
-	if err != nil {
-		l.Fatal("cannot create gateway server", zap.Error(err))
-	}
 
 	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
@@ -147,7 +165,7 @@ func runGatewayServer(store *db.Store, config util.Config) {
 	// ← This routes HTTP → actual gRPC server (interceptor runs)
 	// instead of RegisterGoBankHandlerServer which bypasses interceptor
 	grpcEndpoint := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.GRPC_SERVER_PORT)
-	err = pb.RegisterGoBankHandlerFromEndpoint(ctx, grpcMux, grpcEndpoint, []grpc.DialOption{
+	err := pb.RegisterGoBankHandlerFromEndpoint(ctx, grpcMux, grpcEndpoint, []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	})
 	if err != nil {
