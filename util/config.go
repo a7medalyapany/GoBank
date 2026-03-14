@@ -18,6 +18,7 @@ type Config struct {
 	REFRESH_TOKEN_DURATION time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	GRPC_SERVER_PORT       string        `mapstructure:"GRPC_SERVER_PORT"`
 	ENVIRONMENT            string        `mapstructure:"ENVIRONMENT"`
+    REDIS_ADDRESS          string        `mapstructure:"REDIS_ADDRESS"`
 }
 
 
