@@ -1,7 +1,14 @@
 package worker
 
+// Queue priority names — used when enqueuing tasks (distributor side)
+// and when configuring the server (processor side).
+const (
+	QueueCritical = "critical"
+	QueueDefault  = "default"
+	QueueLow      = "low"
+)
+
 // Task type constants — one per task.
-// Referenced by both Distribute and Process functions.
 // Add new constants here as you add new task files.
 const (
 	TaskSendVerifyEmail = "task:send_verify_email"
