@@ -19,6 +19,9 @@ type Config struct {
 	GRPC_SERVER_PORT       string        `mapstructure:"GRPC_SERVER_PORT"`
 	ENVIRONMENT            string        `mapstructure:"ENVIRONMENT"`
     REDIS_ADDRESS          string        `mapstructure:"REDIS_ADDRESS"`
+    EMAIL_SENDER_NAME      string        `mapstructure:"EMAIL_SENDER_NAME"`
+    EMAIL_SENDER_ADDRESS   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
+    EMAIL_SENDER_PASSWORD  string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
 }
 
 
