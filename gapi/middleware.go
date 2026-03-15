@@ -22,6 +22,7 @@ var publicRoutes = map[string]bool{
 	"/pb.GoBank/CreateUser":        true,
 	"/pb.GoBank/LoginUser":         true,
 	"/pb.GoBank/RenewAccessToken":  true,
+	"/pb.GoBank/VerifyEmail":      true,
 }
 
 // authInterceptor is a gRPC UnaryServerInterceptor that validates Bearer tokens.

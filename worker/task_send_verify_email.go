@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
 	"github.com/a7medalyapany/GoBank.git/logger"
+	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
@@ -62,12 +64,40 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
-	// TODO: send verification email to user.Email
+	 verifyEmail, err := processor.store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
+        Username:   user.Username,
+        Email:      user.Email,
+        SecretCode: util.RandomString(32),
+    })
+    if err != nil {
+        return fmt.Errorf("failed to create verify email: %w", err)
+    }
+
+
+    // Build verification URL
+    verifyURL := fmt.Sprintf("http://localhost:8080/v1/verify_email?email_id=%d&secret_code=%s",
+        verifyEmail.ID, verifyEmail.SecretCode)
+
+    subject := "Welcome to GoBank — please verify your email"
+	content := fmt.Sprintf(`Hi %s,
+
+	Thanks for registering. Click the link below to verify your email address:
+
+	%s
+
+	This link expires in 15 minutes. If you didn't create this account, ignore this email.
+	`, user.FullName, verifyURL)
+
+    err = processor.mailer.SendEmail(subject, content, []string{user.Email}, nil, nil, nil)
+    if err != nil {
+        return fmt.Errorf("failed to send verification email: %w", err)
+    }
 
 	l.Info("processed task",
 		zap.String("type", t.Type()),
 		zap.ByteString("payload", t.Payload()),
 		zap.String("email", user.Email),
+		zap.Int64("verify_email_id", verifyEmail.ID),
 	)
 
 	return nil

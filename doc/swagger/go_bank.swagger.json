@@ -621,6 +621,68 @@
           }
         ]
       }
+    },
+    "/v1/verify_email": {
+      "get": {
+        "summary": "Verify email address",
+        "description": "Verifies a user's email address using the id and secret_code from the verification link. The link expires after 15 minutes and can only be used once.",
+        "operationId": "VerifyEmail",
+        "responses": {
+          "200": {
+            "description": "Email verified successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbVerifyEmailResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid or expired verification link.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Verification record not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "emailId",
+            "description": "ID of the verify_email record.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "secretCode",
+            "description": "Secret code sent to the user's email address.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Auth"
+        ],
+        "security": []
+      }
     }
   },
   "definitions": {
@@ -1028,6 +1090,15 @@
         }
       },
       "description": "User represents the public profile of a GoBank account.\nSensitive fields (hashed_password) are never included."
+    },
+    "pbVerifyEmailResponse": {
+      "type": "object",
+      "properties": {
+        "isVerified": {
+          "type": "boolean",
+          "description": "True if the email was successfully verified."
+        }
+      }
     },
     "protobufAny": {
       "type": "object",

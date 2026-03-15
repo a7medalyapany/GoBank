@@ -15,6 +15,7 @@ import (
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
 	"github.com/a7medalyapany/GoBank.git/gapi"
 	"github.com/a7medalyapany/GoBank.git/logger"
+	"github.com/a7medalyapany/GoBank.git/mail"
 	"github.com/a7medalyapany/GoBank.git/pb"
 	"github.com/a7medalyapany/GoBank.git/util"
 	"github.com/a7medalyapany/GoBank.git/worker"
@@ -59,16 +60,27 @@ func main() {
 	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
 	
 	go runGatewayServer(config)
-	go runTaskProcessor(redisOpt, store)
+	go runTaskProcessor(redisOpt, store, config)
 
 	runGRPCServer(store, config, taskDistributor)
 	// runGinServer(store, config) // kept for reference
 }
 
 
-func runTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store) {
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store, config util.Config) {
 	l := logger.G()
-	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+
+	sender, err := mail.NewGmailSender(
+		config.EMAIL_SENDER_NAME,
+		config.EMAIL_SENDER_ADDRESS,
+		config.EMAIL_SENDER_PASSWORD,
+	)
+	
+	if err != nil {
+		l.Fatal("cannot create mailer", zap.Error(err))
+	}
+
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, sender)
 
 	l.Info("start task processor")
 
