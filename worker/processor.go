@@ -4,7 +4,9 @@ import (
 	"context"
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
+	"github.com/a7medalyapany/GoBank.git/logger"
 	"github.com/hibiken/asynq"
+	"go.uber.org/zap"
 )
 
 // TaskProcessor is the consumer-side interface.
@@ -20,6 +22,7 @@ type RedisTaskProcessor struct {
 }
 
 func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store) TaskProcessor {
+	l := logger.G()
 	server := asynq.NewServer(
 		redisOpt,
 		asynq.Config{
@@ -29,6 +32,12 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store) TaskP
 				QueueDefault:  5,
 				QueueLow:      1,
 			},
+			ErrorHandler: asynq.ErrorHandlerFunc(
+				func(ctx context.Context, task *asynq.Task, err error) {
+					l.Error("failed to process task:", zap.String("type", task.Type()), zap.String("payload", string(task.Payload())), zap.Error(err))
+				},
+			),
+			Logger: NewLogger(),
 		},
 	)
 
