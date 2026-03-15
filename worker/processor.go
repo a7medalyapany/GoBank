@@ -5,6 +5,7 @@ import (
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
 	"github.com/a7medalyapany/GoBank.git/logger"
+	"github.com/a7medalyapany/GoBank.git/mail"
 	"github.com/hibiken/asynq"
 	"go.uber.org/zap"
 )
@@ -19,9 +20,10 @@ type TaskProcessor interface {
 type RedisTaskProcessor struct {
 	server *asynq.Server
 	store  *db.Store
+	mailer mail.EmailSender 
 }
 
-func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store) TaskProcessor {
+func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store, mailer mail.EmailSender) TaskProcessor {
 	l := logger.G()
 	server := asynq.NewServer(
 		redisOpt,
@@ -44,6 +46,7 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store) TaskP
 	return &RedisTaskProcessor{
 		server: server,
 		store:  store,
+		mailer: mailer,
 	}
 }
 
