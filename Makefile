@@ -20,6 +20,9 @@ migratedown:
 migratedown1:
 	migrate -path db/migration -database "postgresql://root:password@localhost:5432/bank?sslmode=disable" -verbose down 1
 
+new_migration:
+	migrate create -ext sql -dir db/migration -seq $(name)
+
 db_docs:
 	dbdocs build doc/db.dbml
 
@@ -80,4 +83,4 @@ redis:
 	docker run --name bank-redis -p 6379:6379 -d redis:8.6.1-alpine
 
 .PHONY: createdb dropdb postgres migrateup migratedown migrateup1 migratedown1 \
-        db_docs db_schema sqlc test server proto evans redis
+        new_migration db_docs db_schema sqlc test server proto evans redis
