@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/a7medalyapany/GoBank.git/pb";
+
+message VerifyEmailRequest {
+  int64 email_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "ID of the verify_email record."
+    minimum: 1
+  }];
+  string secret_code = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Secret code sent to the user's email address."
+  }];
+}
+
+message VerifyEmailResponse {
+  bool is_verified = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "True if the email was successfully verified."
+  }];
+}

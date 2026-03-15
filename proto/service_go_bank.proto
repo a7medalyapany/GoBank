@@ -11,6 +11,7 @@ import "rpc_token.proto";
 import "rpc_account.proto";
 import "rpc_transfer.proto";
 import "rpc_update_user.proto";
+import "rpc_verify_email.proto";
 
 option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
@@ -112,6 +113,20 @@ service GoBank {
       responses: { key: "200" value: { description: "New access token issued." } }
       responses: { key: "401" value: { description: "Refresh token invalid, expired, or session blocked." } }
       responses: { key: "404" value: { description: "Session not found." } }
+    };
+  }
+
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {
+    option (google.api.http) = { get: "/v1/verify_email" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Verify email address"
+      description: "Verifies a user's email address using the id and secret_code from the verification link. The link expires after 15 minutes and can only be used once."
+      tags: ["Auth"]
+      operation_id: "VerifyEmail"
+      security: {}
+      responses: { key: "200" value: { description: "Email verified successfully." } }
+      responses: { key: "400" value: { description: "Invalid or expired verification link." } }
+      responses: { key: "404" value: { description: "Verification record not found." } }
     };
   }
 
