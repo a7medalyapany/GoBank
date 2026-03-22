@@ -9,14 +9,14 @@ option go_package = "github.com/a7medalyapany/GoBank.git/pb";
 
 message UpdateUserRequest {
   // Unique username. Alphanumeric only, no spaces.
-  // example: "john.doe.abc1"
-  string username = 1 [
+  // example: "john_doe_123"
+ string username = 1 [
     (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
-      description: "Unique alphanumeric username. No spaces or special characters."
+      description: "Unique alphanumeric username. Lowercase letters, digits, and underscores only."
       min_length: 3
       max_length: 50
-      pattern: "^[a-zA-Z0-9.]+$"
-      example: '"john.doe.abc1"'
+      pattern: "^[a-z0-9_]+$"
+      example: '"john_doe_123"'
     }
   ];
 
