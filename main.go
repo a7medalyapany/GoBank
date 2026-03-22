@@ -80,7 +80,7 @@ func runTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store, config uti
 		l.Fatal("cannot create mailer", zap.Error(err))
 	}
 
-	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, sender)
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, sender, config)
 
 	l.Info("start task processor")
 
@@ -202,6 +202,12 @@ func runGatewayServer(config util.Config) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/swagger/", gapi.SwaggerHandler)
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.Handle("/", grpcMux)
 
 	loggedMux := logger.HTTPMiddleware(httpOpts)(mux)

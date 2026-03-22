@@ -75,9 +75,9 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 
 
     // Build verification URL
-    verifyURL := fmt.Sprintf("http://localhost:8080/v1/verify_email?email_id=%d&secret_code=%s",
-        verifyEmail.ID, verifyEmail.SecretCode)
-
+    verifyURL := fmt.Sprintf("%s/v1/verify_email?email_id=%d&secret_code=%s",
+    processor.config.BASE_URL, verifyEmail.ID, verifyEmail.SecretCode)
+		
     subject := "Welcome to GoBank — please verify your email"
 	content := fmt.Sprintf(`Hi %s,
 
