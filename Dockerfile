@@ -15,6 +15,7 @@ COPY app.env .
 COPY start.sh .
 COPY db/migration ./migration
 
+RUN sed -i 's/\r//' /go-bank/start.sh
 RUN chmod +x /go-bank/start.sh /go-bank/main
 
 EXPOSE 8080
