@@ -172,9 +172,9 @@ var File_rpc_login_user_proto protoreflect.FileDescriptor
 const file_rpc_login_user_proto_rawDesc = "" +
 	"\n" +
 	"\x14rpc_login_user.proto\x12\x02pb\x1a\n" +
-	"user.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe0\x01\n" +
-	"\x10LoginUserRequest\x12Z\n" +
-	"\busername\x18\x01 \x01(\tB>\x92A;2(Username of the account to authenticate.J\x0f\"john.doe.abc1\"R\busername\x12p\n" +
+	"user.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xdf\x01\n" +
+	"\x10LoginUserRequest\x12Y\n" +
+	"\busername\x18\x01 \x01(\tB=\x92A:2(Username of the account to authenticate.J\x0e\"john_doe_123\"R\busername\x12p\n" +
 	"\bpassword\x18\x02 \x01(\tBT\x92AQ22Account password. Transmitted securely over HTTPS.J\x10\"supersecret123\"\xa2\x02\bpasswordR\bpassword\"\x86\x06\n" +
 	"\x11LoginUserResponse\x12O\n" +
 	"\n" +

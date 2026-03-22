@@ -107,9 +107,9 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x87\x04\n" +
-	"\x04User\x12O\n" +
-	"\busername\x18\x01 \x01(\tB3\x92A02\x1dUnique alphanumeric username.J\x0f\"john.doe.abc1\"R\busername\x12L\n" +
+	"user.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x86\x04\n" +
+	"\x04User\x12N\n" +
+	"\busername\x18\x01 \x01(\tB2\x92A/2\x1dUnique alphanumeric username.J\x0e\"john_doe_123\"R\busername\x12L\n" +
 	"\tfull_name\x18\x02 \x01(\tB/\x92A,2\x1eFull display name of the user.J\n" +
 	"\"John Doe\"R\bfullName\x12H\n" +
 	"\x05email\x18\x03 \x01(\tB2\x92A/2\x19Registered email address.J\x12\"john@example.com\"R\x05email\x12\xa8\x01\n" +
