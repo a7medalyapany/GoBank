@@ -25,7 +25,7 @@ const (
 type CreateUserRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique username. Alphanumeric only, no spaces.
-	// example: "john.doe.abc1"
+	// example: "john_doe_123"
 	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
 	// Full display name of the user.
 	// example: "John Doe"
@@ -149,9 +149,9 @@ var File_rpc_create_user_proto protoreflect.FileDescriptor
 const file_rpc_create_user_proto_rawDesc = "" +
 	"\n" +
 	"\x15rpc_create_user.proto\x12\x02pb\x1a\n" +
-	"user.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xda\x03\n" +
-	"\x11CreateUserRequest\x12\x87\x01\n" +
-	"\busername\x18\x01 \x01(\tBk\x92Ah2>Unique alphanumeric username. No spaces or special characters.J\x0f\"john.doe.abc1\"x2\x80\x01\x03\x8a\x01\x0f^[a-zA-Z0-9.]+$R\busername\x12Q\n" +
+	"user.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xe6\x03\n" +
+	"\x11CreateUserRequest\x12\x93\x01\n" +
+	"\busername\x18\x01 \x01(\tBw\x92At2NUnique alphanumeric username. Lowercase letters, digits, and underscores only.J\x0e\"john_doe_123\"x2\x80\x01\x03\x8a\x01\f^[a-z0-9_]+$R\busername\x12Q\n" +
 	"\tfull_name\x18\x02 \x01(\tB4\x92A12\x1eFull display name of the user.J\n" +
 	"\"John Doe\"xd\x80\x01\x02R\bfullName\x12g\n" +
 	"\x05email\x18\x03 \x01(\tBQ\x92AN28Valid email address. Must be unique across all accounts.J\x12\"john@example.com\"R\x05email\x12\x7f\n" +

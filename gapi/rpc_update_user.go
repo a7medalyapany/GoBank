@@ -51,13 +51,6 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 			return nil, status.Errorf(codes.Internal, "cannot hash password: %v", err)
 		}
 		arg.HashedPassword = pgtype.Text{String: hashedPassword, Valid: true}
-	}
-	if req.Password != nil {
-		hashedPassword, err := util.HashPassword(req.GetPassword())
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "cannot hash password: %v", err)
-		}
-		arg.HashedPassword = pgtype.Text{String: hashedPassword, Valid: true}
 		// stamp the time only when password actually changes
 		arg.PasswordChangedAt = pgtype.Timestamptz{Time: time.Now(), Valid: true}
 	}

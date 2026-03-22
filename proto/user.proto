@@ -13,7 +13,7 @@ message User {
   string username = 1 [
     (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
       description: "Unique alphanumeric username."
-      example: '"john.doe.abc1"'
+      example: '"john_doe_123"'
     }
   ];
 

@@ -13,7 +13,7 @@ message LoginUserRequest {
   string username = 1 [
     (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
       description: "Username of the account to authenticate."
-      example: '"john.doe.abc1"'
+      example: '"john_doe_123"'
     }
   ];
 
