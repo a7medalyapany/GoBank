@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"time"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 
 var firstNames = []string{
