@@ -818,12 +818,12 @@
       "properties": {
         "username": {
           "type": "string",
-          "example": "john.doe.abc1",
-          "description": "Unique alphanumeric username. No spaces or special characters.",
-          "title": "Unique username. Alphanumeric only, no spaces.\nexample: \"john.doe.abc1\"",
+          "example": "john_doe_123",
+          "description": "Unique alphanumeric username. Lowercase letters, digits, and underscores only.",
+          "title": "Unique username. Alphanumeric only, no spaces.\nexample: \"john_doe_123\"",
           "maxLength": 50,
           "minLength": 3,
-          "pattern": "^[a-zA-Z0-9.]+$"
+          "pattern": "^[a-z0-9_]+$"
         },
         "fullName": {
           "type": "string",
@@ -893,7 +893,7 @@
       "properties": {
         "username": {
           "type": "string",
-          "example": "john.doe.abc1",
+          "example": "john_doe_123",
           "description": "Username of the account to authenticate."
         },
         "password": {
@@ -1020,12 +1020,12 @@
       "properties": {
         "username": {
           "type": "string",
-          "example": "john.doe.abc1",
-          "description": "Unique alphanumeric username. No spaces or special characters.",
-          "title": "Unique username. Alphanumeric only, no spaces.\nexample: \"john.doe.abc1\"",
+          "example": "john_doe_123",
+          "description": "Unique alphanumeric username. Lowercase letters, digits, and underscores only.",
+          "title": "Unique username. Alphanumeric only, no spaces.\nexample: \"john_doe_123\"",
           "maxLength": 50,
           "minLength": 3,
-          "pattern": "^[a-zA-Z0-9.]+$"
+          "pattern": "^[a-z0-9_]+$"
         },
         "fullName": {
           "type": "string",
@@ -1065,7 +1065,7 @@
       "properties": {
         "username": {
           "type": "string",
-          "example": "john.doe.abc1",
+          "example": "john_doe_123",
           "description": "Unique alphanumeric username."
         },
         "fullName": {
