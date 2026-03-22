@@ -367,4 +367,4 @@ The service is exposed on port 80 → container port 8080 via an AWS LoadBalance
 
 ## License
 
-MIT
+GoBank is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
