@@ -26,13 +26,14 @@ const (
 // User represents the public profile of a GoBank account.
 // Sensitive fields (hashed_password) are never included.
 type User struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Username string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	FullName string                 `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	Email    string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Username        string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	FullName        string                 `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	Email           string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	IsEmailVerified bool                   `protobuf:"varint,4,opt,name=is_email_verified,json=isEmailVerified,proto3" json:"is_email_verified,omitempty"`
 	// Zero value (0001-01-01) means the password has never been changed.
-	PasswordChangedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=password_changed_at,json=passwordChangedAt,proto3" json:"password_changed_at,omitempty"`
-	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PasswordChangedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=password_changed_at,json=passwordChangedAt,proto3" json:"password_changed_at,omitempty"`
+	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -88,6 +89,13 @@ func (x *User) GetEmail() string {
 	return ""
 }
 
+func (x *User) GetIsEmailVerified() bool {
+	if x != nil {
+		return x.IsEmailVerified
+	}
+	return false
+}
+
 func (x *User) GetPasswordChangedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.PasswordChangedAt
@@ -107,15 +115,16 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x86\x04\n" +
+	"user.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xec\x04\n" +
 	"\x04User\x12N\n" +
 	"\busername\x18\x01 \x01(\tB2\x92A/2\x1dUnique alphanumeric username.J\x0e\"john_doe_123\"R\busername\x12L\n" +
 	"\tfull_name\x18\x02 \x01(\tB/\x92A,2\x1eFull display name of the user.J\n" +
 	"\"John Doe\"R\bfullName\x12H\n" +
-	"\x05email\x18\x03 \x01(\tB2\x92A/2\x19Registered email address.J\x12\"john@example.com\"R\x05email\x12\xa8\x01\n" +
-	"\x13password_changed_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\\\x92AY2WUTC timestamp of the last password change. Zero value means password was never changed.R\x11passwordChangedAt\x12k\n" +
+	"\x05email\x18\x03 \x01(\tB2\x92A/2\x19Registered email address.J\x12\"john@example.com\"R\x05email\x12d\n" +
+	"\x11is_email_verified\x18\x04 \x01(\bB8\x92A523Whether the user's email address has been verified.R\x0fisEmailVerified\x12\xa8\x01\n" +
+	"\x13password_changed_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\\\x92AY2WUTC timestamp of the last password change. Zero value means password was never changed.R\x11passwordChangedAt\x12k\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB0\x92A-2+UTC timestamp when the account was created.R\tcreatedAtB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB0\x92A-2+UTC timestamp when the account was created.R\tcreatedAtB(Z&github.com/a7medalyapany/GoBank.git/pbb\x06proto3"
 
 var (
 	file_user_proto_rawDescOnce sync.Once

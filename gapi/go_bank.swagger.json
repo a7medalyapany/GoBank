@@ -1078,6 +1078,10 @@
           "example": "john@example.com",
           "description": "Registered email address."
         },
+        "isEmailVerified": {
+          "type": "boolean",
+          "description": "Whether the user's email address has been verified."
+        },
         "passwordChangedAt": {
           "type": "string",
           "format": "date-time",
