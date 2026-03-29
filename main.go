@@ -151,7 +151,7 @@ func runGatewayServer(config util.Config) {
 
 	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
-			UseProtoNames: true,
+			EmitUnpopulated: true,
 		},
 		UnmarshalOptions: protojson.UnmarshalOptions{
 			DiscardUnknown: true,
@@ -210,7 +210,7 @@ func runGatewayServer(config util.Config) {
 	})
 	mux.Handle("/", grpcMux)
 
-	loggedMux := logger.HTTPMiddleware(httpOpts)(mux)
+	loggedMux := logger.HTTPMiddleware(httpOpts)(corsMiddleware(mux))
 
 	httpAddress := fmt.Sprintf("%s:%s", config.SERVER_ADDRESS, config.PORT)
 	listener, err := net.Listen("tcp", httpAddress)
@@ -226,4 +226,38 @@ func runGatewayServer(config util.Config) {
 	if err = http.Serve(listener, loggedMux); err != nil {
 		l.Fatal("HTTP gateway stopped", zap.Error(err))
 	}
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        origin := r.Header.Get("Origin")
+
+        // Allow localhost in dev and your Vercel domain in prod
+        allowedOrigins := map[string]bool{
+            "http://localhost:3000": true,
+            "http://localhost:3001": true,
+        }
+
+        // Also allow any vercel.app subdomain for prod
+        if strings.HasSuffix(origin, ".vercel.app") {
+            allowedOrigins[origin] = true
+        }
+
+        if allowedOrigins[origin] {
+            w.Header().Set("Access-Control-Allow-Origin", origin)
+            w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+            w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-Id")
+            w.Header().Set("Access-Control-Allow-Credentials", "true")
+            w.Header().Set("Access-Control-Max-Age", "86400")
+            w.Header().Set("Vary", "Origin")
+        }
+
+        // Handle preflight — return 200 immediately, don't pass to gRPC mux
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+
+        next.ServeHTTP(w, r)
+    })
 }
