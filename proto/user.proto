@@ -31,14 +31,20 @@ message User {
     }
   ];
 
+  bool is_email_verified = 4 [
+  (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Whether the user's email address has been verified."
+  }
+];
+
   // Zero value (0001-01-01) means the password has never been changed.
-  google.protobuf.Timestamp password_changed_at = 4 [
+  google.protobuf.Timestamp password_changed_at = 5 [
     (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
       description: "UTC timestamp of the last password change. Zero value means password was never changed."
     }
   ];
 
-  google.protobuf.Timestamp created_at = 5 [
+  google.protobuf.Timestamp created_at = 6 [
     (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
       description: "UTC timestamp when the account was created."
     }
