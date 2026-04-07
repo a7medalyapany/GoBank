@@ -7,12 +7,14 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createEntry = `-- name: CreateEntry :one
 INSERT INTO entries (account_id, amount) 
 VALUES ($1, $2)
-RETURNING id, amount, account_id, created_at
+RETURNING id, amount, account_id, created_at, transfer_id
 `
 
 type CreateEntryParams struct {
@@ -28,12 +30,38 @@ func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry
 		&i.Amount,
 		&i.AccountID,
 		&i.CreatedAt,
+		&i.TransferID,
+	)
+	return i, err
+}
+
+const createTransferEntry = `-- name: CreateTransferEntry :one
+INSERT INTO entries (account_id, amount, transfer_id)
+VALUES ($1, $2, $3)
+RETURNING id, amount, account_id, created_at, transfer_id
+`
+
+type CreateTransferEntryParams struct {
+	AccountID  int64 `json:"account_id"`
+	Amount     int64 `json:"amount"`
+	TransferID int64 `json:"transfer_id"`
+}
+
+func (q *Queries) CreateTransferEntry(ctx context.Context, arg CreateTransferEntryParams) (Entry, error) {
+	row := q.db.QueryRow(ctx, createTransferEntry, arg.AccountID, arg.Amount, arg.TransferID)
+	var i Entry
+	err := row.Scan(
+		&i.ID,
+		&i.Amount,
+		&i.AccountID,
+		&i.CreatedAt,
+		&i.TransferID,
 	)
 	return i, err
 }
 
 const getEntry = `-- name: GetEntry :one
-SELECT id, amount, account_id, created_at FROM entries 
+SELECT id, amount, account_id, created_at, transfer_id FROM entries 
 WHERE id = $1
 `
 
@@ -45,12 +73,13 @@ func (q *Queries) GetEntry(ctx context.Context, id int64) (Entry, error) {
 		&i.Amount,
 		&i.AccountID,
 		&i.CreatedAt,
+		&i.TransferID,
 	)
 	return i, err
 }
 
 const listEntries = `-- name: ListEntries :many
-SELECT id, amount, account_id, created_at FROM entries
+SELECT id, amount, account_id, created_at, transfer_id FROM entries
 WHERE account_id = $1
 ORDER BY id
 LIMIT $2 OFFSET $3
@@ -76,6 +105,79 @@ func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]Ent
 			&i.Amount,
 			&i.AccountID,
 			&i.CreatedAt,
+			&i.TransferID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActivityEntries = `-- name: ListActivityEntries :many
+SELECT
+  e.id,
+  e.account_id,
+  e.amount,
+  a.currency,
+  e.created_at,
+  e.transfer_id,
+  ca.id AS counterpart_account_id,
+  ca.owner AS counterpart_owner,
+  ca.currency AS counterpart_currency
+FROM entries e
+JOIN accounts a ON a.id = e.account_id
+LEFT JOIN transfers t ON t.id = e.transfer_id
+LEFT JOIN accounts ca ON ca.id = CASE
+  WHEN t.from_account_id = e.account_id THEN t.to_account_id
+  WHEN t.to_account_id = e.account_id THEN t.from_account_id
+  ELSE NULL
+END
+WHERE a.owner = $1
+ORDER BY e.created_at DESC, e.id DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListActivityEntriesParams struct {
+	Owner  string `json:"owner"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
+}
+
+type ListActivityEntriesRow struct {
+	ID                   int64              `json:"id"`
+	AccountID            int64              `json:"account_id"`
+	Amount               int64              `json:"amount"`
+	Currency             string             `json:"currency"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	TransferID           pgtype.Int8        `json:"transfer_id"`
+	CounterpartAccountID pgtype.Int8        `json:"counterpart_account_id"`
+	CounterpartOwner     pgtype.Text        `json:"counterpart_owner"`
+	CounterpartCurrency  pgtype.Text        `json:"counterpart_currency"`
+}
+
+func (q *Queries) ListActivityEntries(ctx context.Context, arg ListActivityEntriesParams) ([]ListActivityEntriesRow, error) {
+	rows, err := q.db.Query(ctx, listActivityEntries, arg.Owner, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActivityEntriesRow{}
+	for rows.Next() {
+		var i ListActivityEntriesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.Amount,
+			&i.Currency,
+			&i.CreatedAt,
+			&i.TransferID,
+			&i.CounterpartAccountID,
+			&i.CounterpartOwner,
+			&i.CounterpartCurrency,
 		); err != nil {
 			return nil, err
 		}
