@@ -20,9 +20,10 @@ type Account struct {
 type Entry struct {
 	ID int64 `json:"id"`
 	// Amount in cents (can be +ve or -ve)
-	Amount    int64              `json:"amount"`
-	AccountID int64              `json:"account_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Amount     int64              `json:"amount"`
+	AccountID  int64              `json:"account_id"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	TransferID pgtype.Int8        `json:"transfer_id"`
 }
 
 type Session struct {

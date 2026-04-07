@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/a7medalyapany/GoBank.git/pb";
+
+message ActivityEntry {
+  int64 id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Unique activity entry ID."
+  }];
+  int64 account_id = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "The account that owns this entry."
+    minimum: 1
+  }];
+  int64 amount = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Amount in the smallest currency unit. Negative = debit, positive = credit."
+    example: "50000"
+  }];
+  string currency = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "ISO 4217 currency of the account this entry belongs to."
+    example: "\"USD\""
+  }];
+  google.protobuf.Timestamp created_at = 5 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "UTC timestamp when the entry was created."
+  }];
+  google.protobuf.Int64Value transfer_id = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Transfer ID when this entry was created by an internal transfer; null for manual adjustments."
+  }];
+  google.protobuf.Int64Value counterpart_account_id = 7 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Counterpart account ID on the other side of the transfer when available."
+  }];
+  google.protobuf.StringValue counterpart_owner = 8 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Owner username of the counterpart account when available."
+  }];
+  google.protobuf.StringValue counterpart_currency = 9 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Currency of the counterpart account when available."
+  }];
+}
+
+message ListEntriesRequest {
+  int32 page_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "1-based page number."
+    minimum: 1
+    example: "1"
+  }];
+  int32 page_size = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Number of entries per page. Max 50."
+    minimum: 1
+    maximum: 50
+    example: "20"
+  }];
+}
+
+message ListEntriesResponse {
+  repeated ActivityEntry entries = 1;
+}

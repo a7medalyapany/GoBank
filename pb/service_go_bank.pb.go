@@ -27,7 +27,7 @@ var File_service_go_bank_proto protoreflect.FileDescriptor
 const file_service_go_bank_proto_rawDesc = "" +
 	"\n" +
 	"\x15service_go_bank.proto\x12\x02pb\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\n" +
-	"user.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x0frpc_token.proto\x1a\x11rpc_account.proto\x1a\x12rpc_transfer.proto\x1a\x15rpc_update_user.proto\x1a\x16rpc_verify_email.proto2\xe8\"\n" +
+	"user.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x0frpc_token.proto\x1a\x11rpc_account.proto\x1a\x12rpc_transfer.proto\x1a\x0frpc_entry.proto\x1a\x15rpc_update_user.proto\x1a\x16rpc_verify_email.proto2\xef%\n" +
 	"\x06GoBank\x12\xba\x02\n" +
 	"\n" +
 	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\xfc\x01\x92A\xe4\x01\n" +
@@ -110,7 +110,16 @@ const file_service_go_bank_proto_rawDesc = "" +
 	"\x1bPaginated list of accounts.b\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/accounts\x12\x88\x03\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/accounts\x12\x84\x03\n" +
+	"\vListEntries\x12\x16.pb.ListEntriesRequest\x1a\x17.pb.ListEntriesResponse\"\xc3\x02\x92A\xac\x02\n" +
+	"\aEntries\x12\x15List activity entries\x1a\x7fReturns a paginated list of activity entries across all accounts owned by the authenticated user, ordered by most recent first.*\vListEntriesJ?\n" +
+	"\x03200\x128\n" +
+	"6Paginated list of authenticated user activity entries.J)\n" +
+	"\x03401\x12\"\n" +
+	" Missing or invalid Bearer token.b\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\r\x12\v/v1/entries\x12\x88\x03\n" +
 	"\rUpdateAccount\x12\x18.pb.UpdateAccountRequest\x1a\x19.pb.UpdateAccountResponse\"\xc1\x02\x92A\xa1\x02\n" +
 	"\bAccounts\x12\x16Update account balance\x1ahSets the balance of an account. The account must belong to the authenticated user. Balance must be >= 0.*\rUpdateAccountJ&\n" +
 	"\x03200\x12\x1f\n" +
@@ -178,20 +187,22 @@ var file_service_go_bank_proto_goTypes = []any{
 	(*CreateAccountRequest)(nil),     // 5: pb.CreateAccountRequest
 	(*GetAccountRequest)(nil),        // 6: pb.GetAccountRequest
 	(*ListAccountsRequest)(nil),      // 7: pb.ListAccountsRequest
-	(*UpdateAccountRequest)(nil),     // 8: pb.UpdateAccountRequest
-	(*DeleteAccountRequest)(nil),     // 9: pb.DeleteAccountRequest
-	(*CreateTransferRequest)(nil),    // 10: pb.CreateTransferRequest
-	(*CreateUserResponse)(nil),       // 11: pb.CreateUserResponse
-	(*LoginUserResponse)(nil),        // 12: pb.LoginUserResponse
-	(*RenewAccessTokenResponse)(nil), // 13: pb.RenewAccessTokenResponse
-	(*VerifyEmailResponse)(nil),      // 14: pb.VerifyEmailResponse
-	(*UpdateUserResponse)(nil),       // 15: pb.UpdateUserResponse
-	(*CreateAccountResponse)(nil),    // 16: pb.CreateAccountResponse
-	(*GetAccountResponse)(nil),       // 17: pb.GetAccountResponse
-	(*ListAccountsResponse)(nil),     // 18: pb.ListAccountsResponse
-	(*UpdateAccountResponse)(nil),    // 19: pb.UpdateAccountResponse
-	(*DeleteAccountResponse)(nil),    // 20: pb.DeleteAccountResponse
-	(*CreateTransferResponse)(nil),   // 21: pb.CreateTransferResponse
+	(*ListEntriesRequest)(nil),       // 8: pb.ListEntriesRequest
+	(*UpdateAccountRequest)(nil),     // 9: pb.UpdateAccountRequest
+	(*DeleteAccountRequest)(nil),     // 10: pb.DeleteAccountRequest
+	(*CreateTransferRequest)(nil),    // 11: pb.CreateTransferRequest
+	(*CreateUserResponse)(nil),       // 12: pb.CreateUserResponse
+	(*LoginUserResponse)(nil),        // 13: pb.LoginUserResponse
+	(*RenewAccessTokenResponse)(nil), // 14: pb.RenewAccessTokenResponse
+	(*VerifyEmailResponse)(nil),      // 15: pb.VerifyEmailResponse
+	(*UpdateUserResponse)(nil),       // 16: pb.UpdateUserResponse
+	(*CreateAccountResponse)(nil),    // 17: pb.CreateAccountResponse
+	(*GetAccountResponse)(nil),       // 18: pb.GetAccountResponse
+	(*ListAccountsResponse)(nil),     // 19: pb.ListAccountsResponse
+	(*ListEntriesResponse)(nil),      // 20: pb.ListEntriesResponse
+	(*UpdateAccountResponse)(nil),    // 21: pb.UpdateAccountResponse
+	(*DeleteAccountResponse)(nil),    // 22: pb.DeleteAccountResponse
+	(*CreateTransferResponse)(nil),   // 23: pb.CreateTransferResponse
 }
 var file_service_go_bank_proto_depIdxs = []int32{
 	0,  // 0: pb.GoBank.CreateUser:input_type -> pb.CreateUserRequest
@@ -202,22 +213,24 @@ var file_service_go_bank_proto_depIdxs = []int32{
 	5,  // 5: pb.GoBank.CreateAccount:input_type -> pb.CreateAccountRequest
 	6,  // 6: pb.GoBank.GetAccount:input_type -> pb.GetAccountRequest
 	7,  // 7: pb.GoBank.ListAccounts:input_type -> pb.ListAccountsRequest
-	8,  // 8: pb.GoBank.UpdateAccount:input_type -> pb.UpdateAccountRequest
-	9,  // 9: pb.GoBank.DeleteAccount:input_type -> pb.DeleteAccountRequest
-	10, // 10: pb.GoBank.CreateTransfer:input_type -> pb.CreateTransferRequest
-	11, // 11: pb.GoBank.CreateUser:output_type -> pb.CreateUserResponse
-	12, // 12: pb.GoBank.LoginUser:output_type -> pb.LoginUserResponse
-	13, // 13: pb.GoBank.RenewAccessToken:output_type -> pb.RenewAccessTokenResponse
-	14, // 14: pb.GoBank.VerifyEmail:output_type -> pb.VerifyEmailResponse
-	15, // 15: pb.GoBank.UpdateUser:output_type -> pb.UpdateUserResponse
-	16, // 16: pb.GoBank.CreateAccount:output_type -> pb.CreateAccountResponse
-	17, // 17: pb.GoBank.GetAccount:output_type -> pb.GetAccountResponse
-	18, // 18: pb.GoBank.ListAccounts:output_type -> pb.ListAccountsResponse
-	19, // 19: pb.GoBank.UpdateAccount:output_type -> pb.UpdateAccountResponse
-	20, // 20: pb.GoBank.DeleteAccount:output_type -> pb.DeleteAccountResponse
-	21, // 21: pb.GoBank.CreateTransfer:output_type -> pb.CreateTransferResponse
-	11, // [11:22] is the sub-list for method output_type
-	0,  // [0:11] is the sub-list for method input_type
+	8,  // 8: pb.GoBank.ListEntries:input_type -> pb.ListEntriesRequest
+	9,  // 9: pb.GoBank.UpdateAccount:input_type -> pb.UpdateAccountRequest
+	10, // 10: pb.GoBank.DeleteAccount:input_type -> pb.DeleteAccountRequest
+	11, // 11: pb.GoBank.CreateTransfer:input_type -> pb.CreateTransferRequest
+	12, // 12: pb.GoBank.CreateUser:output_type -> pb.CreateUserResponse
+	13, // 13: pb.GoBank.LoginUser:output_type -> pb.LoginUserResponse
+	14, // 14: pb.GoBank.RenewAccessToken:output_type -> pb.RenewAccessTokenResponse
+	15, // 15: pb.GoBank.VerifyEmail:output_type -> pb.VerifyEmailResponse
+	16, // 16: pb.GoBank.UpdateUser:output_type -> pb.UpdateUserResponse
+	17, // 17: pb.GoBank.CreateAccount:output_type -> pb.CreateAccountResponse
+	18, // 18: pb.GoBank.GetAccount:output_type -> pb.GetAccountResponse
+	19, // 19: pb.GoBank.ListAccounts:output_type -> pb.ListAccountsResponse
+	20, // 20: pb.GoBank.ListEntries:output_type -> pb.ListEntriesResponse
+	21, // 21: pb.GoBank.UpdateAccount:output_type -> pb.UpdateAccountResponse
+	22, // 22: pb.GoBank.DeleteAccount:output_type -> pb.DeleteAccountResponse
+	23, // 23: pb.GoBank.CreateTransfer:output_type -> pb.CreateTransferResponse
+	12, // [12:24] is the sub-list for method output_type
+	0,  // [0:12] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -234,6 +247,7 @@ func file_service_go_bank_proto_init() {
 	file_rpc_token_proto_init()
 	file_rpc_account_proto_init()
 	file_rpc_transfer_proto_init()
+	file_rpc_entry_proto_init()
 	file_rpc_update_user_proto_init()
 	file_rpc_verify_email_proto_init()
 	type x struct{}
