@@ -10,6 +10,7 @@ import "rpc_login_user.proto";
 import "rpc_token.proto";
 import "rpc_account.proto";
 import "rpc_transfer.proto";
+import "rpc_entry.proto";
 import "rpc_update_user.proto";
 import "rpc_verify_email.proto";
 
@@ -186,6 +187,19 @@ service GoBank {
       operation_id: "ListAccounts"
       security: { security_requirement: { key: "BearerAuth" value: {} } }
       responses: { key: "200" value: { description: "Paginated list of accounts." } }
+    };
+  }
+
+  rpc ListEntries(ListEntriesRequest) returns (ListEntriesResponse) {
+    option (google.api.http) = { get: "/v1/entries" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List activity entries"
+      description: "Returns a paginated list of activity entries across all accounts owned by the authenticated user, ordered by most recent first."
+      tags: ["Entries"]
+      operation_id: "ListEntries"
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+      responses: { key: "200" value: { description: "Paginated list of authenticated user activity entries." } }
+      responses: { key: "401" value: { description: "Missing or invalid Bearer token." } }
     };
   }
 
