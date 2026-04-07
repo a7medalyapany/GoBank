@@ -27,6 +27,7 @@ const (
 	GoBank_CreateAccount_FullMethodName    = "/pb.GoBank/CreateAccount"
 	GoBank_GetAccount_FullMethodName       = "/pb.GoBank/GetAccount"
 	GoBank_ListAccounts_FullMethodName     = "/pb.GoBank/ListAccounts"
+	GoBank_ListEntries_FullMethodName      = "/pb.GoBank/ListEntries"
 	GoBank_UpdateAccount_FullMethodName    = "/pb.GoBank/UpdateAccount"
 	GoBank_DeleteAccount_FullMethodName    = "/pb.GoBank/DeleteAccount"
 	GoBank_CreateTransfer_FullMethodName   = "/pb.GoBank/CreateTransfer"
@@ -46,6 +47,7 @@ type GoBankClient interface {
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*CreateAccountResponse, error)
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*GetAccountResponse, error)
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
+	ListEntries(ctx context.Context, in *ListEntriesRequest, opts ...grpc.CallOption) (*ListEntriesResponse, error)
 	UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*UpdateAccountResponse, error)
 	DeleteAccount(ctx context.Context, in *DeleteAccountRequest, opts ...grpc.CallOption) (*DeleteAccountResponse, error)
 	CreateTransfer(ctx context.Context, in *CreateTransferRequest, opts ...grpc.CallOption) (*CreateTransferResponse, error)
@@ -139,6 +141,16 @@ func (c *goBankClient) ListAccounts(ctx context.Context, in *ListAccountsRequest
 	return out, nil
 }
 
+func (c *goBankClient) ListEntries(ctx context.Context, in *ListEntriesRequest, opts ...grpc.CallOption) (*ListEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListEntriesResponse)
+	err := c.cc.Invoke(ctx, GoBank_ListEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *goBankClient) UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*UpdateAccountResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateAccountResponse)
@@ -183,6 +195,7 @@ type GoBankServer interface {
 	CreateAccount(context.Context, *CreateAccountRequest) (*CreateAccountResponse, error)
 	GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error)
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
+	ListEntries(context.Context, *ListEntriesRequest) (*ListEntriesResponse, error)
 	UpdateAccount(context.Context, *UpdateAccountRequest) (*UpdateAccountResponse, error)
 	DeleteAccount(context.Context, *DeleteAccountRequest) (*DeleteAccountResponse, error)
 	CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error)
@@ -219,6 +232,9 @@ func (UnimplementedGoBankServer) GetAccount(context.Context, *GetAccountRequest)
 }
 func (UnimplementedGoBankServer) ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAccounts not implemented")
+}
+func (UnimplementedGoBankServer) ListEntries(context.Context, *ListEntriesRequest) (*ListEntriesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListEntries not implemented")
 }
 func (UnimplementedGoBankServer) UpdateAccount(context.Context, *UpdateAccountRequest) (*UpdateAccountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateAccount not implemented")
@@ -394,6 +410,24 @@ func _GoBank_ListAccounts_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GoBank_ListEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoBankServer).ListEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoBank_ListEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoBankServer).ListEntries(ctx, req.(*ListEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GoBank_UpdateAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateAccountRequest)
 	if err := dec(in); err != nil {
@@ -486,6 +520,10 @@ var GoBank_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAccounts",
 			Handler:    _GoBank_ListAccounts_Handler,
+		},
+		{
+			MethodName: "ListEntries",
+			Handler:    _GoBank_ListEntries_Handler,
 		},
 		{
 			MethodName: "UpdateAccount",
