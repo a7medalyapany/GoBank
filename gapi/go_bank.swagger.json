@@ -447,6 +447,73 @@
         "security": []
       }
     },
+    "/v1/entries": {
+      "get": {
+        "summary": "List activity entries",
+        "description": "Returns a paginated list of activity entries across all accounts owned by the authenticated user, ordered by most recent first.",
+        "operationId": "ListEntries",
+        "responses": {
+          "200": {
+            "description": "Paginated list of authenticated user activity entries.",
+            "schema": {
+              "$ref": "#/definitions/pbListEntriesResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Not Found — the requested resource does not exist.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageId",
+            "description": "1-based page number.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageSize",
+            "description": "Number of entries per page. Max 50.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Entries"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/transfers": {
       "post": {
         "summary": "Create a transfer",
@@ -747,6 +814,56 @@
         }
       }
     },
+    "pbActivityEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unique activity entry ID."
+        },
+        "accountId": {
+          "type": "string",
+          "format": "int64",
+          "description": "The account that owns this entry.",
+          "minimum": 1
+        },
+        "amount": {
+          "type": "string",
+          "format": "int64",
+          "example": 50000,
+          "description": "Amount in the smallest currency unit. Negative = debit, positive = credit."
+        },
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "ISO 4217 currency of the account this entry belongs to."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the entry was created."
+        },
+        "transferId": {
+          "type": "string",
+          "format": "int64",
+          "description": "Transfer ID when this entry was created by an internal transfer; null for manual adjustments."
+        },
+        "counterpartAccountId": {
+          "type": "string",
+          "format": "int64",
+          "description": "Counterpart account ID on the other side of the transfer when available."
+        },
+        "counterpartOwner": {
+          "type": "string",
+          "description": "Owner username of the counterpart account when available."
+        },
+        "counterpartCurrency": {
+          "type": "string",
+          "description": "Currency of the counterpart account when available."
+        }
+      }
+    },
     "pbCreateAccountRequest": {
       "type": "object",
       "properties": {
@@ -884,6 +1001,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/pbAccount"
+          }
+        }
+      }
+    },
+    "pbListEntriesResponse": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbActivityEntry"
           }
         }
       }
