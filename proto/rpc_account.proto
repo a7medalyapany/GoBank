@@ -17,6 +17,12 @@ message Account {
   google.protobuf.Timestamp created_at = 5 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = { description: "UTC timestamp when the account was created." }];
 }
 
+message AccountLookUp {
+  int64  id       = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = { description: "Unique account ID." }];
+  string owner    = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = { description: "Username of the account owner." }];
+  string currency = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = { description: "ISO 4217 currency code." example: '"USD"' }];
+}
+
 // ─── CreateAccount ────────────────────────────────────────────────────────────
 
 message CreateAccountRequest {
@@ -97,4 +103,17 @@ message DeleteAccountResponse {
     description: "Confirmation message."
     example: '"deleted"'
   }];
+}
+
+// ─── LookUpAccount ───────────────────────────────────────────────────────────────
+
+message LookUpAccountRequest {
+  int64 id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "ID of the account to lookup."
+    minimum: 1
+  }];
+}
+
+message LookUpAccountResponse {
+  AccountLookUp account = 1;
 }
