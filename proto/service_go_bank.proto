@@ -231,6 +231,21 @@ service GoBank {
     };
   }
 
+  rpc LookUpAccount(LookUpAccountRequest) returns (LookUpAccountResponse) {
+  option (google.api.http) = {
+    get: "/v1/accounts/lookup"
+  };
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+    summary: "Look up an account"
+    description: "Retrieves a single account by ID."
+    tags: ["Accounts"]
+    operation_id: "LookUpAccount"
+    security: { security_requirement: { key: "BearerAuth" value: {} } }
+    responses: { key: "200" value: { description: "Account retrieved successfully." } }
+    responses: { key: "404" value: { description: "Account not found." } }
+  };
+}
+
   // ── Transfers (protected) ──────────────────────────────────────────────────
 
   rpc CreateTransfer(CreateTransferRequest) returns (CreateTransferResponse) {
