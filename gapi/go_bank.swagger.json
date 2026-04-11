@@ -156,6 +156,65 @@
         ]
       }
     },
+    "/v1/accounts/lookup": {
+      "get": {
+        "summary": "Look up an account",
+        "description": "Retrieves a single account by ID.",
+        "operationId": "LookUpAccount",
+        "responses": {
+          "200": {
+            "description": "Account retrieved successfully.",
+            "schema": {
+              "$ref": "#/definitions/pbLookUpAccountResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid input or missing required fields.",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid Bearer token.",
+            "schema": {}
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed to access this resource.",
+            "schema": {}
+          },
+          "404": {
+            "description": "Account not found.",
+            "schema": {}
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {}
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "ID of the account to lookup.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/accounts/{id}": {
       "get": {
         "summary": "Get an account",
@@ -814,6 +873,25 @@
         }
       }
     },
+    "pbAccountLookUp": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unique account ID."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Username of the account owner."
+        },
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "ISO 4217 currency code."
+        }
+      }
+    },
     "pbActivityEntry": {
       "type": "object",
       "properties": {
@@ -1062,6 +1140,14 @@
         "user": {
           "$ref": "#/definitions/pbUser",
           "description": "Authenticated user's public profile. Password is never returned."
+        }
+      }
+    },
+    "pbLookUpAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/pbAccountLookUp"
         }
       }
     },
