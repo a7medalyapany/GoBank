@@ -170,8 +170,8 @@ func TestListActivityEntries(t *testing.T) {
 
 	entries, err := testQueries.ListActivityEntries(ctx, ListActivityEntriesParams{
 		Owner:  user.Username,
-		Limit:  10,
-		Offset: 0,
+		LimitArg:  10,
+		OffsetArg: 0,
 	})
 	require.NoError(t, err)
 	require.Len(t, entries, 4)
@@ -202,8 +202,8 @@ func TestListActivityEntries(t *testing.T) {
 
 	page1, err := testQueries.ListActivityEntries(ctx, ListActivityEntriesParams{
 		Owner:  user.Username,
-		Limit:  2,
-		Offset: 0,
+		LimitArg:  2,
+		OffsetArg: 0,
 	})
 	require.NoError(t, err)
 	require.Len(t, page1, 2)
@@ -212,8 +212,8 @@ func TestListActivityEntries(t *testing.T) {
 
 	page2, err := testQueries.ListActivityEntries(ctx, ListActivityEntriesParams{
 		Owner:  user.Username,
-		Limit:  2,
-		Offset: 2,
+		LimitArg:  2,
+		OffsetArg: 2,
 	})
 	require.NoError(t, err)
 	require.Len(t, page2, 2)
