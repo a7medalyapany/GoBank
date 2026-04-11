@@ -1,6 +1,10 @@
 package db
 
-import "context"
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 // TransferTxParams is input for transfer
 type TransferTxParams struct {
@@ -37,7 +41,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		result.FromEntry, err = q.CreateTransferEntry(ctx, CreateTransferEntryParams{
 			AccountID:  arg.FromAccountID,
 			Amount:     -arg.Amount,
-			TransferID: result.Transfer.ID,
+			TransferID: pgtype.Int8{Int64: result.Transfer.ID, Valid: true},
 		})
 		if err != nil {
 			return err
@@ -46,7 +50,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		result.ToEntry, err = q.CreateTransferEntry(ctx, CreateTransferEntryParams{
 			AccountID:  arg.ToAccountID,
 			Amount:     arg.Amount,
-			TransferID: result.Transfer.ID,
+			TransferID: pgtype.Int8{Int64: result.Transfer.ID, Valid: true},
 		})
 		if err != nil {
 			return err
