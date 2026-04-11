@@ -87,6 +87,25 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 	return i, err
 }
 
+const getAccountBasic = `-- name: GetAccountBasic :one
+SELECT id, owner, currency
+FROM accounts
+WHERE id = $1 LIMIT 1
+`
+
+type GetAccountBasicRow struct {
+	ID       int64  `json:"id"`
+	Owner    string `json:"owner"`
+	Currency string `json:"currency"`
+}
+
+func (q *Queries) GetAccountBasic(ctx context.Context, id int64) (GetAccountBasicRow, error) {
+	row := q.db.QueryRow(ctx, getAccountBasic, id)
+	var i GetAccountBasicRow
+	err := row.Scan(&i.ID, &i.Owner, &i.Currency)
+	return i, err
+}
+
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
 SELECT id, owner, balance, currency, created_at FROM accounts 
 WHERE id = $1
