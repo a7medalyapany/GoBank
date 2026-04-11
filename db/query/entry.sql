@@ -39,4 +39,4 @@ LEFT JOIN accounts ca ON ca.id = CASE
 END
 WHERE a.owner = sqlc.arg(owner)
 ORDER BY e.created_at DESC, e.id DESC
-LIMIT sqlc.arg(limit) OFFSET sqlc.arg(offset);
+LIMIT sqlc.arg(limit_arg) OFFSET sqlc.arg(offset_arg);

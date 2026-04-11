@@ -27,8 +27,8 @@ func (server *Server) ListEntries(ctx context.Context, req *pb.ListEntriesReques
 
 	rows, err := server.store.ListActivityEntries(ctx, db.ListActivityEntriesParams{
 		Owner:  authPayload.Username,
-		Limit:  req.GetPageSize(),
-		Offset: (req.GetPageId() - 1) * req.GetPageSize(),
+		LimitArg: req.GetPageSize(),
+		OffsetArg: (req.GetPageId() - 1) * req.GetPageSize(),
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list activity entries: %v", err)
