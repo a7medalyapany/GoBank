@@ -204,3 +204,39 @@ func validateDeleteAccountRequest(req *pb.DeleteAccountRequest) (violations []*e
 	}
 	return
 }
+
+// LookUpAccount
+func (server *Server) LookUpAccount(ctx context.Context, req *pb.LookUpAccountRequest) (*pb.LookUpAccountResponse, error) {
+	if violations := validateLookUpAccountRequest(req); violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	// Ensure user is authenticated
+	authPayload, ok := ctx.Value(authPayloadKey).(*token.Payload)
+	if !ok || authPayload == nil {
+		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+	}
+
+	account, err := server.store.GetAccount(ctx, req.GetId())
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "account not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get account: %v", err)
+	}
+
+	accountPb := &pb.AccountLookUp{
+		Id:       account.ID,
+		Owner:    account.Owner,
+		Currency: account.Currency,
+	}
+
+	return &pb.LookUpAccountResponse{Account: accountPb}, nil
+}
+
+func validateLookUpAccountRequest(req *pb.LookUpAccountRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateID(req.GetId()); err != nil {
+		violations = append(violations, fieldViolation("id", err))
+	}
+	return
+}

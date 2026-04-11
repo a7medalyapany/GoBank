@@ -30,6 +30,7 @@ const (
 	GoBank_ListEntries_FullMethodName      = "/pb.GoBank/ListEntries"
 	GoBank_UpdateAccount_FullMethodName    = "/pb.GoBank/UpdateAccount"
 	GoBank_DeleteAccount_FullMethodName    = "/pb.GoBank/DeleteAccount"
+	GoBank_LookUpAccount_FullMethodName    = "/pb.GoBank/LookUpAccount"
 	GoBank_CreateTransfer_FullMethodName   = "/pb.GoBank/CreateTransfer"
 )
 
@@ -50,6 +51,7 @@ type GoBankClient interface {
 	ListEntries(ctx context.Context, in *ListEntriesRequest, opts ...grpc.CallOption) (*ListEntriesResponse, error)
 	UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*UpdateAccountResponse, error)
 	DeleteAccount(ctx context.Context, in *DeleteAccountRequest, opts ...grpc.CallOption) (*DeleteAccountResponse, error)
+	LookUpAccount(ctx context.Context, in *LookUpAccountRequest, opts ...grpc.CallOption) (*LookUpAccountResponse, error)
 	CreateTransfer(ctx context.Context, in *CreateTransferRequest, opts ...grpc.CallOption) (*CreateTransferResponse, error)
 }
 
@@ -171,6 +173,16 @@ func (c *goBankClient) DeleteAccount(ctx context.Context, in *DeleteAccountReque
 	return out, nil
 }
 
+func (c *goBankClient) LookUpAccount(ctx context.Context, in *LookUpAccountRequest, opts ...grpc.CallOption) (*LookUpAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LookUpAccountResponse)
+	err := c.cc.Invoke(ctx, GoBank_LookUpAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *goBankClient) CreateTransfer(ctx context.Context, in *CreateTransferRequest, opts ...grpc.CallOption) (*CreateTransferResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateTransferResponse)
@@ -198,6 +210,7 @@ type GoBankServer interface {
 	ListEntries(context.Context, *ListEntriesRequest) (*ListEntriesResponse, error)
 	UpdateAccount(context.Context, *UpdateAccountRequest) (*UpdateAccountResponse, error)
 	DeleteAccount(context.Context, *DeleteAccountRequest) (*DeleteAccountResponse, error)
+	LookUpAccount(context.Context, *LookUpAccountRequest) (*LookUpAccountResponse, error)
 	CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error)
 	mustEmbedUnimplementedGoBankServer()
 }
@@ -241,6 +254,9 @@ func (UnimplementedGoBankServer) UpdateAccount(context.Context, *UpdateAccountRe
 }
 func (UnimplementedGoBankServer) DeleteAccount(context.Context, *DeleteAccountRequest) (*DeleteAccountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteAccount not implemented")
+}
+func (UnimplementedGoBankServer) LookUpAccount(context.Context, *LookUpAccountRequest) (*LookUpAccountResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LookUpAccount not implemented")
 }
 func (UnimplementedGoBankServer) CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateTransfer not implemented")
@@ -464,6 +480,24 @@ func _GoBank_DeleteAccount_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GoBank_LookUpAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookUpAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoBankServer).LookUpAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoBank_LookUpAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoBankServer).LookUpAccount(ctx, req.(*LookUpAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GoBank_CreateTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateTransferRequest)
 	if err := dec(in); err != nil {
@@ -532,6 +566,10 @@ var GoBank_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAccount",
 			Handler:    _GoBank_DeleteAccount_Handler,
+		},
+		{
+			MethodName: "LookUpAccount",
+			Handler:    _GoBank_LookUpAccount_Handler,
 		},
 		{
 			MethodName: "CreateTransfer",
