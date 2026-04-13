@@ -68,9 +68,12 @@ Every HTTP request is transcoded by gRPC-Gateway into a gRPC call, meaning **all
 - **PASETO tokens** — short-lived access tokens + long-lived refresh tokens with session store
 - **Multi-currency accounts** — USD, EUR, EGP; one account per currency per user
 - **Atomic transfers** — deadlock-safe transaction ordering; balances stored as integers (cents) to avoid floating-point issues
+- **Activity feed** — enriched entry listing with counterpart account info, currency, and transfer linkage via `ListActivityEntries`
+- **Account lookup** — lightweight `LookUpAccount` endpoint for transfer recipient validation (returns owner + currency, no balance)
 - **Background jobs** — email verification dispatched asynchronously via Redis/Asynq
 - **Swagger UI** — served at `/swagger/` with the OpenAPI spec embedded in the binary
 - **Structured logging** — per-request correlation IDs, user context, gRPC codes, latency
+- **CORS** — configurable allowed origins for local dev and Vercel-hosted frontends
 
 ---
 
@@ -152,10 +155,18 @@ Both files are already in `.gitignore` — **never commit them**.
 
 ## Running Locally
 
-### 1. Start dependencies
+### 1. Create the Docker network
+
+> ⚠️ **This step must come first.** The Postgres container is attached to `bank-network`, and the network must exist before you start it.
 
 ```bash
-# Start Postgres
+docker network create bank-network
+```
+
+### 2. Start dependencies
+
+```bash
+# Start Postgres (attached to bank-network)
 make postgres
 
 # Create the database
@@ -165,13 +176,13 @@ make createdb
 make redis
 ```
 
-### 2. Run migrations
+### 3. Run migrations
 
 ```bash
 make migrateup
 ```
 
-### 3. Start the server
+### 4. Start the server
 
 ```bash
 make server
@@ -236,6 +247,7 @@ make test
 go test -v ./db/sqlc/...
 go test -v ./token/...
 go test -v ./api/...
+go test -v ./gapi/...
 
 # Run the real email integration test (requires valid Gmail credentials in app.env)
 go test -v -run TestSendRealEmail ./mail/
@@ -261,19 +273,21 @@ http://localhost:8080/swagger/doc.json
 
 ### Quick API overview
 
-| Endpoint                | Method | Auth | Description                            |
-| ----------------------- | ------ | ---- | -------------------------------------- |
-| `/v1/users`             | POST   | ❌   | Register a new user                    |
-| `/v1/auth/login`        | POST   | ❌   | Login, get access + refresh tokens     |
-| `/v1/auth/renew_access` | POST   | ❌   | Renew access token using refresh token |
-| `/v1/verify_email`      | GET    | ❌   | Verify email via link                  |
-| `/v1/users`             | PATCH  | ✅   | Update your profile                    |
-| `/v1/accounts`          | POST   | ✅   | Create a currency account              |
-| `/v1/accounts`          | GET    | ✅   | List your accounts (paginated)         |
-| `/v1/accounts/:id`      | GET    | ✅   | Get a specific account                 |
-| `/v1/accounts/:id`      | PUT    | ✅   | Update account balance                 |
-| `/v1/accounts/:id`      | DELETE | ✅   | Delete an account                      |
-| `/v1/transfers`         | POST   | ✅   | Transfer funds between accounts        |
+| Endpoint                | Method | Auth | Description                                    |
+| ----------------------- | ------ | ---- | ---------------------------------------------- |
+| `/v1/users`             | POST   | ❌   | Register a new user                            |
+| `/v1/auth/login`        | POST   | ❌   | Login, get access + refresh tokens             |
+| `/v1/auth/renew_access` | POST   | ❌   | Renew access token using refresh token         |
+| `/v1/verify_email`      | GET    | ❌   | Verify email via link                          |
+| `/v1/users`             | PATCH  | ✅   | Update your profile                            |
+| `/v1/accounts`          | POST   | ✅   | Create a currency account                      |
+| `/v1/accounts`          | GET    | ✅   | List your accounts (paginated)                 |
+| `/v1/accounts/:id`      | GET    | ✅   | Get a specific account                         |
+| `/v1/accounts/lookup`   | GET    | ✅   | Look up any account by ID (for transfers)      |
+| `/v1/accounts/:id`      | PUT    | ✅   | Update account balance                         |
+| `/v1/accounts/:id`      | DELETE | ✅   | Delete an account                              |
+| `/v1/transfers`         | POST   | ✅   | Transfer funds between accounts                |
+| `/v1/entries`           | GET    | ✅   | List activity entries with counterpart details |
 
 All protected endpoints require `Authorization: Bearer <access_token>` in the header.
 
