@@ -10,6 +10,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/a7medalyapany/GoBank.git/api"
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
@@ -53,8 +54,9 @@ func main() {
 
 	store := db.NewStore(conn)
 
-	redisOpt := asynq.RedisClientOpt{
-		Addr: config.REDIS_ADDRESS,
+	redisOpt, err := parseRedisOpt(config.REDIS_ADDRESS)
+	if err != nil {
+		l.Fatal("invalid redis address", zap.Error(err))
 	}
 
 	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
@@ -260,4 +262,20 @@ func corsMiddleware(next http.Handler) http.Handler {
 
         next.ServeHTTP(w, r)
     })
+}
+
+func parseRedisOpt(addr string) (asynq.RedisClientOpt, error) {
+	if strings.HasPrefix(addr, "redis://") || strings.HasPrefix(addr, "rediss://") {
+		opt, err := redis.ParseURL(addr)
+		if err != nil {
+			return asynq.RedisClientOpt{}, fmt.Errorf("invalid redis URL: %w", err)
+		}
+		return asynq.RedisClientOpt{
+			Addr:      opt.Addr,
+			Password:  opt.Password,
+			DB:        opt.DB,
+			TLSConfig: opt.TLSConfig,
+		}, nil
+	}
+	return asynq.RedisClientOpt{Addr: addr}, nil
 }
