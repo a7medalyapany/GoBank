@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["go", "curl"]
+
+[phases.build]
+cmds = [
+  "go build -o app main.go",
+  "curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.1/migrate.linux-amd64.tar.gz | tar xvz"
+]
+
+[start]
+cmd = "./migrate -path db/migration -database \"$DB_URL\" -verbose up && ./app"
