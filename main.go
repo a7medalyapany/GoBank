@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -28,18 +29,25 @@ import (
 )
 
 func main() {
-	config, err := util.LoadConfig(".")
+	config, err := util.LoadConfig()
 	if err != nil {
 		panic(fmt.Sprintf("cannot load config: %v", err))
 	}
-
+	
 	logCfg := logger.DefaultConfig("go-bank", "1.0.0", config.ENVIRONMENT)
 	if err := logger.InitGlobal(logCfg); err != nil {
 		log.Fatalf("cannot init logger: %v", err)
 	}
 	defer logger.G().Sync() // nolint: errcheck
-
+	
 	l := logger.G()
+
+	l.Info("CONFIG DEBUG",
+		zap.String("port", config.PORT),
+		zap.String("grpc", config.GRPC_SERVER_PORT),
+		zap.String("db", config.DB_URL),
+	)
+
 	l.Info("starting GoBank",
 		zap.String("port", config.PORT),
 		zap.String("grpc_port", config.GRPC_SERVER_PORT),
@@ -54,7 +62,11 @@ func main() {
 	store := db.NewStore(conn)
 
 	redisOpt := asynq.RedisClientOpt{
-		Addr: config.REDIS_ADDRESS,
+    Addr:     config.REDIS_ADDRESS,
+    Password: config.REDIS_PASSWORD,
+	}
+	if config.REDIS_TLS {
+		redisOpt.TLSConfig = &tls.Config{}
 	}
 
 	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
