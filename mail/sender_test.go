@@ -191,7 +191,7 @@ func TestSendRealEmail(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
  
-	config, err := util.LoadConfig("..")
+	config, err := util.LoadConfig()
 	require.NoError(t, err)
  
 	sender, err := NewGmailSender(
