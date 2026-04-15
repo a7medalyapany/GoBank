@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -19,6 +20,8 @@ type Config struct {
 	GRPC_SERVER_PORT       string        `mapstructure:"GRPC_SERVER_PORT"`
 	ENVIRONMENT            string        `mapstructure:"ENVIRONMENT"`
     REDIS_ADDRESS          string        `mapstructure:"REDIS_ADDRESS"`
+    REDIS_PASSWORD         string        `mapstructure:"REDIS_PASSWORD"`
+    REDIS_TLS              bool          `mapstructure:"REDIS_TLS"`
     BASE_URL               string        `mapstructure:"BASE_URL"`
     EMAIL_SENDER_NAME      string        `mapstructure:"EMAIL_SENDER_NAME"`
     EMAIL_SENDER_ADDRESS   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
@@ -27,23 +30,30 @@ type Config struct {
 
 
 // LoadConfig reads configuration from file or environment variables.
-func LoadConfig(path string) (config Config, err error) {
-    viper.AddConfigPath(path)
-    viper.SetConfigName("app")
-    viper.SetConfigType("env")
-    viper.AutomaticEnv()
+func LoadConfig() (config Config, err error) {
+    v := viper.New()
+    
+    // Try file first (local dev only)
+    v.SetConfigFile("app.env")
+    v.SetConfigType("env")
+    _ = v.ReadInConfig()
 
-    // Set a safe default for ENVIRONMENT.
-	viper.SetDefault("ENVIRONMENT", "production")
+    // This is what makes Unmarshal respect env vars
+    v.AutomaticEnv()
+    v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-    // Only read file if it exists — in production, env vars are enough
-    if err = viper.ReadInConfig(); err != nil {
-        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-            return // real error, not just missing file
-        }
-        err = nil // file not found is fine in production
+    // Explicitly bind each key to its env var name
+    keys := []string{
+        "PORT", "DB_URL", "TESTING_DB_URL", "SERVER_ADDRESS",
+        "TOKEN_SYMMETRIC_KEY", "ACCESS_TOKEN_DURATION", "REFRESH_TOKEN_DURATION",
+        "GRPC_SERVER_PORT", "ENVIRONMENT", "REDIS_ADDRESS", "REDIS_PASSWORD",
+        "REDIS_TLS", "BASE_URL", "EMAIL_SENDER_NAME",
+        "EMAIL_SENDER_ADDRESS", "EMAIL_SENDER_PASSWORD",
+    }
+    for _, key := range keys {
+        v.BindEnv(key)
     }
 
-    err = viper.Unmarshal(&config)
+    err = v.Unmarshal(&config)
     return
 }
