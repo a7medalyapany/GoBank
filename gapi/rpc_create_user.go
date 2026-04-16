@@ -3,6 +3,7 @@ package gapi
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
@@ -34,30 +35,6 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 			FullName:       req.GetFullName(),
 			Email:          req.GetEmail(),
 		},
-		AfterCreate: func(user db.User) error {
-			if syncDistributor, ok := server.taskDistributor.(interface {
-				DistributeTaskSendVerifyEmailForUser(context.Context, db.User) error
-			}); ok {
-				return syncDistributor.DistributeTaskSendVerifyEmailForUser(ctx, user)
-			}
-
-			taskPayload := &worker.PayloadSendVerifyEmail{
-				Username: user.Username,
-			}
-
-			opts := []asynq.Option{
-				asynq.MaxRetry(10),
-				asynq.ProcessIn(10 * time.Second), // delay task processing by 10 seconds
-				asynq.Queue(worker.QueueCritical),
-			}
-
-			taskOpts := make([]interface{}, 0, len(opts))
-			for _, opt := range opts {
-				taskOpts = append(taskOpts, opt)
-			}
-
-			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, taskOpts...)
-		},
 	}
 
 	txResult, err := server.store.CreateUserTx(ctx, arg)
@@ -73,7 +50,34 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
+	if err := server.dispatchVerifyEmailTask(ctx, txResult.User); err != nil {
+		log.Printf("warning: failed to dispatch verify email task for user %s: %v", txResult.User.Username, err)
+	}
+
 	return &pb.CreateUserResponse{User: convertUser(txResult.User)}, nil
+}
+
+func (server *Server) dispatchVerifyEmailTask(ctx context.Context, user db.User) error {
+	if server.taskDistributor == nil {
+		return nil
+	}
+
+	taskPayload := &worker.PayloadSendVerifyEmail{
+		Username: user.Username,
+	}
+
+	opts := []asynq.Option{
+		asynq.MaxRetry(10),
+		asynq.ProcessIn(10 * time.Second),
+		asynq.Queue(worker.QueueCritical),
+	}
+
+	taskOpts := make([]interface{}, 0, len(opts))
+	for _, opt := range opts {
+		taskOpts = append(taskOpts, opt)
+	}
+
+	return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, taskOpts...)
 }
 
 func validateCreateUserRequest(req *pb.CreateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {

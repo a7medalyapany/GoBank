@@ -9,24 +9,27 @@ type CreateUserTxParams struct {
 }
 
 type CreateUserTxResult struct {
-	User	User
+	User User
 }
 
-
-// CreateUserTx performs a database transaction for creating a user and executing the AfterCreate function
+// CreateUserTx performs a database transaction for creating a user and optionally executing the AfterCreate callback.
 func (store *Store) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
-    var result CreateUserTxResult
+	var result CreateUserTxResult
 
-    err := store.execTx(ctx, func(q *Queries) error {
-        var err error
+	err := store.execTx(ctx, func(q *Queries) error {
+		var err error
 
 		result.User, err = q.CreateUser(ctx, arg.CreateUserParams)
 		if err != nil {
 			return err
 		}
 
-		return arg.AfterCreate(result.User)
-    })
+		if arg.AfterCreate != nil {
+			return arg.AfterCreate(result.User)
+		}
 
-    return result, err
+		return nil
+	})
+
+	return result, err
 }
