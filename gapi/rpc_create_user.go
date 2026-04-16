@@ -45,7 +45,12 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 				asynq.Queue(worker.QueueCritical),
 			}
 
-			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...)
+			taskOpts := make([]interface{}, 0, len(opts))
+			for _, opt := range opts {
+				taskOpts = append(taskOpts, opt)
+			}
+
+			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, taskOpts...)
 		},
 	}
 
@@ -60,7 +65,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 			}
 		}
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
-	}	
+	}
 
 	return &pb.CreateUserResponse{User: convertUser(txResult.User)}, nil
 }
