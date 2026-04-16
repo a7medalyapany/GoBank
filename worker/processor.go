@@ -21,7 +21,7 @@ type TaskProcessor interface {
 type RedisTaskProcessor struct {
 	server *asynq.Server
 	store  *db.Store
-	mailer mail.EmailSender 
+	mailer mail.EmailSender
 	config util.Config
 }
 
@@ -49,7 +49,7 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store, maile
 		server: server,
 		store:  store,
 		mailer: mailer,
-		 config: config,
+		config: config,
 	}
 }
 

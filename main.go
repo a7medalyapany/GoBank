@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -28,18 +29,25 @@ import (
 )
 
 func main() {
-	config, err := util.LoadConfig(".")
+	config, err := util.LoadConfig()
 	if err != nil {
 		panic(fmt.Sprintf("cannot load config: %v", err))
 	}
 
-	logCfg := logger.DefaultConfig("go-bank", "1.0.0", config.ENVIRONMENT)
+	logCfg := logger.DefaultConfig("go-bank", "1.1.0", config.ENVIRONMENT)
 	if err := logger.InitGlobal(logCfg); err != nil {
 		log.Fatalf("cannot init logger: %v", err)
 	}
 	defer logger.G().Sync() // nolint: errcheck
 
 	l := logger.G()
+
+	l.Info("CONFIG DEBUG",
+		zap.String("port", config.PORT),
+		zap.String("grpc", config.GRPC_SERVER_PORT),
+		zap.String("db", config.DB_URL),
+	)
+
 	l.Info("starting GoBank",
 		zap.String("port", config.PORT),
 		zap.String("grpc_port", config.GRPC_SERVER_PORT),
@@ -53,32 +61,25 @@ func main() {
 
 	store := db.NewStore(conn)
 
-	redisOpt := asynq.RedisClientOpt{
-		Addr: config.REDIS_ADDRESS,
+	sender, err := newEmailSender(config)
+	if err != nil {
+		l.Fatal("cannot create mailer", zap.Error(err))
 	}
 
-	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
-	
+	taskDistributor, useAsyncProcessor := newTaskDistributor(store, sender, config)
+
 	go runGatewayServer(config)
-	go runTaskProcessor(redisOpt, store, config)
+	if useAsyncProcessor {
+		go runTaskProcessor(store, sender, config)
+	}
 
 	runGRPCServer(store, config, taskDistributor)
 	// runGinServer(store, config) // kept for reference
 }
 
-
-func runTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store, config util.Config) {
+func runTaskProcessor(store *db.Store, sender mail.EmailSender, config util.Config) {
 	l := logger.G()
-
-	sender, err := mail.NewGmailSender(
-		config.EMAIL_SENDER_NAME,
-		config.EMAIL_SENDER_ADDRESS,
-		config.EMAIL_SENDER_PASSWORD,
-	)
-	
-	if err != nil {
-		l.Fatal("cannot create mailer", zap.Error(err))
-	}
+	redisOpt := newRedisClientOpt(config)
 
 	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, sender, config)
 
@@ -87,6 +88,42 @@ func runTaskProcessor(redisOpt asynq.RedisClientOpt, store *db.Store, config uti
 	if err := taskProcessor.Start(); err != nil {
 		l.Fatal("cannot start task processor", zap.Error(err))
 	}
+}
+
+func newTaskDistributor(store *db.Store, sender mail.EmailSender, config util.Config) (worker.TaskDistributor, bool) {
+	l := logger.G()
+
+	switch strings.ToLower(strings.TrimSpace(config.ENVIRONMENT)) {
+	case "development":
+		l.Info("using async task distributor with Redis")
+		return worker.NewRedisTaskDistributor(newRedisClientOpt(config)), true
+	case "production":
+		l.Info("using sync task distributor without Redis")
+		return worker.NewSyncTaskDistributor(store, sender, config), false
+	default:
+		l.Fatal("invalid ENVIRONMENT value", zap.String("environment", config.ENVIRONMENT))
+		return nil, false
+	}
+}
+
+func newRedisClientOpt(config util.Config) asynq.RedisClientOpt {
+	redisOpt := asynq.RedisClientOpt{
+		Addr:     config.REDIS_ADDRESS,
+		Password: config.REDIS_PASSWORD,
+	}
+	if config.REDIS_TLS {
+		redisOpt.TLSConfig = &tls.Config{}
+	}
+
+	return redisOpt
+}
+
+func newEmailSender(config util.Config) (mail.EmailSender, error) {
+	return mail.NewGmailSender(
+		config.EMAIL_SENDER_NAME,
+		config.EMAIL_SENDER_ADDRESS,
+		config.EMAIL_SENDER_PASSWORD,
+	)
 }
 
 // runGinServer starts the Gin HTTP REST server (kept for reference).
@@ -199,7 +236,6 @@ func runGatewayServer(config util.Config) {
 		// LogRequestBody: true, // dev only
 	}
 
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/swagger/", gapi.SwaggerHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -229,35 +265,35 @@ func runGatewayServer(config util.Config) {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        origin := r.Header.Get("Origin")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
 
-        // Allow localhost in dev and your Vercel domain in prod
-        allowedOrigins := map[string]bool{
-            "http://localhost:3000": true,
-            "http://localhost:3001": true,
-        }
+		// Allow localhost in dev and your Vercel domain in prod
+		allowedOrigins := map[string]bool{
+			"http://localhost:3000": true,
+			"http://localhost:3001": true,
+		}
 
-        // Also allow any vercel.app subdomain for prod
-        if strings.HasSuffix(origin, ".vercel.app") {
-            allowedOrigins[origin] = true
-        }
+		// Also allow any vercel.app subdomain for prod
+		if strings.HasSuffix(origin, ".vercel.app") {
+			allowedOrigins[origin] = true
+		}
 
-        if allowedOrigins[origin] {
-            w.Header().Set("Access-Control-Allow-Origin", origin)
-            w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-            w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-Id")
-            w.Header().Set("Access-Control-Allow-Credentials", "true")
-            w.Header().Set("Access-Control-Max-Age", "86400")
-            w.Header().Set("Vary", "Origin")
-        }
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-Id")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Max-Age", "86400")
+			w.Header().Set("Vary", "Origin")
+		}
 
-        // Handle preflight — return 200 immediately, don't pass to gRPC mux
-        if r.Method == http.MethodOptions {
-            w.WriteHeader(http.StatusOK)
-            return
-        }
+		// Handle preflight — return 200 immediately, don't pass to gRPC mux
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 
-        next.ServeHTTP(w, r)
-    })
+		next.ServeHTTP(w, r)
+	})
 }

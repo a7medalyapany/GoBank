@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 
 	db "github.com/a7medalyapany/GoBank.git/db/sqlc"
 	"github.com/a7medalyapany/GoBank.git/token"
@@ -77,6 +78,11 @@ func (server *Server) setupRouter() {
 
 	// transfers' APIs
 	authRoutes.POST("/transfers", server.createTransfer)
+
+	// health check API
+	router.GET("/healthz", func(ctx *gin.Context) {
+    	ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
 	server.router = router
 }

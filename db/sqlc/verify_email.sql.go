@@ -36,6 +36,37 @@ func (q *Queries) CreateVerifyEmail(ctx context.Context, arg CreateVerifyEmailPa
 	return i, err
 }
 
+const getLatestActiveVerifyEmail = `-- name: GetLatestActiveVerifyEmail :one
+SELECT id, username, email, secret_code, is_used, created_at, expires_at
+FROM verify_emails
+WHERE username = $1
+  AND email = $2
+  AND is_used = false
+  AND expires_at > now()
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetLatestActiveVerifyEmailParams struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+func (q *Queries) GetLatestActiveVerifyEmail(ctx context.Context, arg GetLatestActiveVerifyEmailParams) (VerifyEmail, error) {
+	row := q.db.QueryRow(ctx, getLatestActiveVerifyEmail, arg.Username, arg.Email)
+	var i VerifyEmail
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.SecretCode,
+		&i.IsUsed,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const updateVerifyEmail = `-- name: UpdateVerifyEmail :one
 UPDATE verify_emails SET is_used = true
 WHERE id = $1
