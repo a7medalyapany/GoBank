@@ -15,6 +15,10 @@ type SyncTaskDistributor struct {
 	handler *verifyEmailTaskHandler
 }
 
+type syncVerifyEmailTaskDistributor interface {
+	DistributeTaskSendVerifyEmailForUser(ctx context.Context, user db.User) error
+}
+
 func NewSyncTaskDistributor(store *db.Store, mailer mail.EmailSender, config util.Config) TaskDistributor {
 	return &SyncTaskDistributor{
 		handler: newVerifyEmailTaskHandler(store, mailer, config),
@@ -34,4 +38,8 @@ func (distributor *SyncTaskDistributor) DistributeTaskSendVerifyEmail(
 	}
 
 	return nil
+}
+
+func (distributor *SyncTaskDistributor) DistributeTaskSendVerifyEmailForUser(ctx context.Context, user db.User) error {
+	return distributor.handler.processTaskSendVerifyEmailForUser(ctx, user)
 }
