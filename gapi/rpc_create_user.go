@@ -35,6 +35,12 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 			Email:          req.GetEmail(),
 		},
 		AfterCreate: func(user db.User) error {
+			if syncDistributor, ok := server.taskDistributor.(interface {
+				DistributeTaskSendVerifyEmailForUser(context.Context, db.User) error
+			}); ok {
+				return syncDistributor.DistributeTaskSendVerifyEmailForUser(ctx, user)
+			}
+
 			taskPayload := &worker.PayloadSendVerifyEmail{
 				Username: user.Username,
 			}

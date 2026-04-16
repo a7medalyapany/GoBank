@@ -130,6 +130,10 @@ func (handler *verifyEmailTaskHandler) ProcessTaskSendVerifyEmail(ctx context.Co
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
+	return handler.processTaskSendVerifyEmailForUser(ctx, user)
+}
+
+func (handler *verifyEmailTaskHandler) processTaskSendVerifyEmailForUser(ctx context.Context, user db.User) error {
 	verifyEmail, err := handler.store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
 		Username:   user.Username,
 		Email:      user.Email,
