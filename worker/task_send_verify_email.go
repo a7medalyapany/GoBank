@@ -70,13 +70,9 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
-	verifyEmail, err := processor.store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
-		Username:   user.Username,
-		Email:      user.Email,
-		SecretCode: util.RandomString(32),
-	})
+	verifyEmail, err := getOrCreateActiveVerifyEmail(ctx, processor.store, user)
 	if err != nil {
-		return fmt.Errorf("failed to create verify email: %w", err)
+		return err
 	}
 
 	// Build verification URL
@@ -134,13 +130,9 @@ func (handler *verifyEmailTaskHandler) ProcessTaskSendVerifyEmail(ctx context.Co
 }
 
 func (handler *verifyEmailTaskHandler) processTaskSendVerifyEmailForUser(ctx context.Context, user db.User) error {
-	verifyEmail, err := handler.store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
-		Username:   user.Username,
-		Email:      user.Email,
-		SecretCode: util.RandomString(32),
-	})
+	verifyEmail, err := getOrCreateActiveVerifyEmail(ctx, handler.store, user)
 	if err != nil {
-		return fmt.Errorf("failed to create verify email: %w", err)
+		return err
 	}
 
 	verifyURL := fmt.Sprintf(
@@ -189,6 +181,31 @@ func normalizeAsynqOptions(opts ...interface{}) ([]asynq.Option, error) {
 	}
 
 	return asynqOpts, nil
+}
+
+func getOrCreateActiveVerifyEmail(ctx context.Context, store *db.Store, user db.User) (db.VerifyEmail, error) {
+	verifyEmail, err := store.GetLatestActiveVerifyEmail(ctx, db.GetLatestActiveVerifyEmailParams{
+		Username: user.Username,
+		Email:    user.Email,
+	})
+	if err == nil {
+		return verifyEmail, nil
+	}
+
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return db.VerifyEmail{}, fmt.Errorf("failed to get active verify email: %w", err)
+	}
+
+	verifyEmail, err = store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
+		Username:   user.Username,
+		Email:      user.Email,
+		SecretCode: util.RandomString(32),
+	})
+	if err != nil {
+		return db.VerifyEmail{}, fmt.Errorf("failed to create verify email: %w", err)
+	}
+
+	return verifyEmail, nil
 }
 
 func verifyEmailSubject() string {
