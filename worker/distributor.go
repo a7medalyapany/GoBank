@@ -12,7 +12,7 @@ type TaskDistributor interface {
 	DistributeTaskSendVerifyEmail(
 		ctx context.Context,
 		payload *PayloadSendVerifyEmail,
-		opts ...asynq.Option,
+		opts ...interface{},
 	) error
 }
 
