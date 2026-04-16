@@ -15,9 +15,6 @@ type SyncTaskDistributor struct {
 	handler *verifyEmailTaskHandler
 }
 
-type syncVerifyEmailTaskDistributor interface {
-	DistributeTaskSendVerifyEmailForUser(ctx context.Context, user db.User) error
-}
 
 func NewSyncTaskDistributor(store *db.Store, mailer mail.EmailSender, config util.Config) TaskDistributor {
 	return &SyncTaskDistributor{
